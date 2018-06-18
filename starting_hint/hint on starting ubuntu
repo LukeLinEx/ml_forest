@@ -1,0 +1,9 @@
+# http://docs.python-guide.org/en/latest/starting/install3/linux/
+
+sudo apt-get install software-properties-common
+sudo add-apt-repository ppa:deadsnakes/ppa
+sudo apt-get update
+sudo apt-get install python3.6
+
+rm /usr/bin/python3
+ln -s /usr/bin/python3.6 /usr/bin/python3
