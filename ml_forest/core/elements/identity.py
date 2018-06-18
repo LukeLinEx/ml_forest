@@ -1,4 +1,5 @@
 from copy import deepcopy
+from ml_forest.core.constructions.db_handler import DbHandler
 
 
 class Base(object):
@@ -58,8 +59,8 @@ class Base(object):
 
     @property
     def essentials(self):
-        essen = self.__essentials
-        return deepcopy(essen)
+        dh = DbHandler()
+        return dh.collect_essentials(self)
 
     @classmethod
     def decide_element(cls):

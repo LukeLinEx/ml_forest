@@ -1,5 +1,6 @@
 import numpy as np
 from ml_forest.core.elements.identity import Base
+from ml_forest.core.constructions.db_handler import DbHandler
 
 __author__ = 'LukeLin'
 
@@ -153,10 +154,6 @@ class Frame(Base):
         end = self.get_smallest_fold_start(end)
         return list(range(start, end))
 
-    @property
-    def essentials(self):
-        raise NotImplementedError
-
     def get_idx_for_layer(self, layer):
         if not isinstance(layer, int):
             raise TypeError('The height should be an integer.\n')
@@ -182,6 +179,7 @@ class Frame(Base):
     @property
     def depth(self):
         return self.__depth
+
 
 # TODO: decide a derived class that can be easily used to initialize
 # class FrameInitByDeepestLayer(Frame):
@@ -234,3 +232,4 @@ if __name__ == '__main__':
         frame.ravel_key((0, 0)), frame.ravel_key((0, 1)), frame.ravel_key((0, 2)),
         frame.ravel_key((0, 3)), frame.ravel_key((0, 4))
     )
+
