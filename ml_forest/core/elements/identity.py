@@ -1,6 +1,4 @@
-import re
 from copy import deepcopy
-from bson.objectid import ObjectId
 
 
 class Base(object):
@@ -63,8 +61,9 @@ class Base(object):
         essen = self.__essentials
         return deepcopy(essen)
 
-    def decide_element(self):
-        return type(self).__name__
+    @classmethod
+    def decide_element(cls):
+        return cls.__name__
 
 
 if __name__ == "__main__":
