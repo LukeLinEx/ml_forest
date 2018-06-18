@@ -1,5 +1,4 @@
 from copy import deepcopy
-from ml_forest.core.constructions.db_handler import DbHandler
 
 
 class Base(object):
@@ -59,8 +58,21 @@ class Base(object):
 
     @property
     def essentials(self):
-        dh = DbHandler()
-        return dh.collect_essentials(self)
+        """
+        :param self: The purpose is to collect all the essentials from all the parent classes.
+        :param doc: dictionary
+        :return:
+        """
+        _type = type(self)
+        doc = {}
+        while _type != object:
+            tmp = self.__getattribute__("_{}__essentials".format(_type.__name__))
+            for key in tmp:
+                if key not in doc:
+                    doc[key] = tmp[key]
+            _type = _type.__bases__[0]
+
+        return doc
 
     @classmethod
     def decide_element(cls):
