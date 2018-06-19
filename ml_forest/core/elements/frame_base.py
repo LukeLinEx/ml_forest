@@ -27,8 +27,13 @@ class Frame(Base):
         self.__depth = len(lst_layers)
 
         # TODO: saving
-        # if type(self) == Frame:
-        #     self.save2files()
+        if type(self) == Frame:
+            if self.db:
+                dh = DbHandler()
+                obj_id = dh.init_doc(self)
+                self.obj_id = obj_id
+            if self.filepaths:
+                raise NotImplementedError("Implement the saving objects")
 
     @staticmethod
     def __check(num_observations, lst_layers):
@@ -208,28 +213,32 @@ class Frame(Base):
 
 
 if __name__ == '__main__':
-    print('Test ravel_key:\n')
-    frame = Frame(203, [3, 3, 5])
-    print(frame.ravel_key((1,)), '\n')
-    print(frame.ravel_key((2, 1)), '\n')
-    print(frame.ravel_key((1, 2, 1)), '\n')
+    # print('Test ravel_key:\n')
+    # frame = Frame(203, [3, 3, 5])
+    # print(frame.ravel_key((1,)), '\n')
+    # print(frame.ravel_key((2, 1)), '\n')
+    # print(frame.ravel_key((1, 2, 1)), '\n')
+    #
+    # print("Some simple test below:\n")
+    # print(frame.lst_layers)
+    # key_ = (1, 0, 0)
+    # print(frame.ravel_key(key_), '\n')
+    # print(frame.get_single_fold(key_))
+    # print(frame.get_single_fold((2, 2)))
+    # print(frame.num_observations)
+    # print('\n')
+    # print(frame.depth)
+    # print(frame.get_idx_for_layer(1))
+    # print(frame.get_idx_for_layer(2))
+    #
+    # frame = Frame(20, [2, 5])
+    # print(frame.ravel_key((0,)), '\n')
+    # print(
+    #     frame.ravel_key((0, 0)), frame.ravel_key((0, 1)), frame.ravel_key((0, 2)),
+    #     frame.ravel_key((0, 3)), frame.ravel_key((0, 4))
+    # )
+    bucket = "mltests3mongo"
+    project = "housing_price"
 
-    print("Some simple test below:\n")
-    print(frame.lst_layers)
-    key_ = (1, 0, 0)
-    print(frame.ravel_key(key_), '\n')
-    print(frame.get_single_fold(key_))
-    print(frame.get_single_fold((2, 2)))
-    print(frame.num_observations)
-    print('\n')
-    print(frame.depth)
-    print(frame.get_idx_for_layer(1))
-    print(frame.get_idx_for_layer(2))
-
+    db = {"host": bucket, "project": project}
     frame = Frame(20, [2, 5])
-    print(frame.ravel_key((0,)), '\n')
-    print(
-        frame.ravel_key((0, 0)), frame.ravel_key((0, 1)), frame.ravel_key((0, 2)),
-        frame.ravel_key((0, 3)), frame.ravel_key((0, 4))
-    )
-

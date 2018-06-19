@@ -17,6 +17,15 @@ class Base(object):
             ]
         :return:
         """
+        if db and not isinstance(db, dict):
+            raise TypeError("Currently only support db of the dictionary type")
+        if filepaths and not isinstance(filepaths, list):
+            raise TypeError("Currently the collection of the file paths has to be of the list type")
+        elif filepaths:
+            for path in filepaths:
+                if not isinstance(path, dict):
+                    raise TypeError("Currently the file paths have to be of the dictionary type")
+
         self.__essentials = {'type': type(self)}
 
         if db:
