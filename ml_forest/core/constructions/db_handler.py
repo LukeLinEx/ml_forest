@@ -33,6 +33,7 @@ class DbHandler(object):
             else:
                 return obj
 
+        doc = deepcopy(doc)
         resulted_doc = {key: encode_switch(doc[key]) for key in doc}
 
         return resulted_doc

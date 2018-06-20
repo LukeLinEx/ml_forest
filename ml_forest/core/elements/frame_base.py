@@ -26,12 +26,12 @@ class Frame(Base):
         }
         self.__depth = len(lst_layers)
 
-        # TODO: saving
         if type(self) == Frame:
             if self.db:
                 dh = DbHandler()
                 obj_id = dh.init_doc(self)
                 self.obj_id = obj_id
+            # TODO: saving the obj into file
             if self.filepaths:
                 raise NotImplementedError("Implement the saving objects")
 
@@ -212,33 +212,106 @@ class Frame(Base):
 #         return self.__len_folds_deepest_layer
 
 
-if __name__ == '__main__':
-    # print('Test ravel_key:\n')
-    # frame = Frame(203, [3, 3, 5])
-    # print(frame.ravel_key((1,)), '\n')
-    # print(frame.ravel_key((2, 1)), '\n')
-    # print(frame.ravel_key((1, 2, 1)), '\n')
-    #
-    # print("Some simple test below:\n")
-    # print(frame.lst_layers)
-    # key_ = (1, 0, 0)
-    # print(frame.ravel_key(key_), '\n')
-    # print(frame.get_single_fold(key_))
-    # print(frame.get_single_fold((2, 2)))
-    # print(frame.num_observations)
-    # print('\n')
-    # print(frame.depth)
-    # print(frame.get_idx_for_layer(1))
-    # print(frame.get_idx_for_layer(2))
-    #
-    # frame = Frame(20, [2, 5])
-    # print(frame.ravel_key((0,)), '\n')
-    # print(
-    #     frame.ravel_key((0, 0)), frame.ravel_key((0, 1)), frame.ravel_key((0, 2)),
-    #     frame.ravel_key((0, 3)), frame.ravel_key((0, 4))
-    # )
-    bucket = "mltests3mongo"
-    project = "housing_price"
+def test1():
+    print('Creating a frame:')
+    frame = Frame(203, [3, 3, 5])
 
-    db = {"host": bucket, "project": project}
+    print("\n")
+    print("Test some attributes:")
+    boo = frame.lst_layers == [3, 3, 5]
+    print("tset lst_layers correct: {}".format(boo))
+    boo = frame.num_observations == 203
+    print("test num_observations correct: {}".format(boo))
+    boo = frame.depth == 3
+    print("test depth correct: {}".format(boo))
+
+    print("\n")
+    print('Test ravel_key:')
+    boo = frame.ravel_key((1,)) == (15, 30)
+    print("test raveling the key (1,) OK: {}".format(boo))
+    boo = frame.ravel_key((2, 1)) == (35, 40)
+    print("test raveling the key (2,1) OK: {}".format(boo))
+    boo = frame.ravel_key((1, 2, 1)) == (26, 27)
+    print("test raveling the key (1,2,1) OK: {}".format(boo))
+
+    print("\n")
+    boo = frame.get_single_fold((1, 0, 0)) == [75, 76, 77, 78, 79]
+    print("test creating fold for (1,0,0) OK: {}".format(boo))
+    boo = frame.get_single_fold((2,2)) == [
+        183, 184, 185, 186, 187, 188, 189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 202
+    ]
+    print("test creating fold for (2,2) OK: {}".format(boo))
+
+    print("\n")
+    boo = frame.get_idx_for_layer(1) == [
+        list(range(75)),
+        list(range(75, 143)),
+        list(range(143, 203))
+    ]
+    print("test if get idx for the layer 1 correct: {}".format(boo))
+    boo = frame.get_idx_for_layer(2) == [
+        list(range(25)), list(range(25, 50)), list(range(50, 75)), list(range(75, 100)),
+        list(range(100, 123)), list(range(123, 143)), list((range(143, 163))),
+        list(range(163, 183)), list(range(183, 203))
+    ]
+    print("test if get idx for the layer 2 correct: {}".format(boo))
+
+
+
+
+if __name__ == '__main__':
+    # bucket = "mltests3mongo"
+    # project = "housing_price"
+    #
+    # db = {"host": bucket, "project": project}
     frame = Frame(20, [2, 5])
+    print(frame)
+
+
+    def get_folds(frame, current_layer):
+        if current_layer == 1:
+            key_target = [tuple()]
+        else:
+            target_layer = current_layer - 1
+            key_target = frame.create_structure(target_layer)
+
+        key_current = frame.create_structure(current_layer)
+        hash_current = dict(
+            zip(key_current, frame.get_idx_for_layer(current_layer)))  # This should work for both py2 & py3
+        return key_target, key_current, hash_current
+
+    def out_sample_train(frame, current_layer):
+        # TODO: currently not good for the top layer
+        assert current_layer>0, "At this point, no more clean fold possible. Use train_final instead"
+        key_target, key_current, hash_current = get_folds(frame, current_layer)
+
+        train_keys = []
+        test_keys = []
+        for test_k in key_current:
+            train_k = list(filter(lambda k: k[0] == test_k[0] and k != test_k, key_current))
+            train_keys.append(train_k)
+            test_keys.append(test_k)
+
+        return test_keys, train_keys
+
+
+    # for p in zip(*out_sample_train(frame, 2)):
+    #     print(p[0])
+    #     print(p[1])
+    #     print("\n")
+    print(get_folds(frame, 1))
+
+
+
+        # for k in key_target:
+        #     collect = filter(lambda i: i[:len(k)] == k, key_current) # (0,0), (0,1), (0,2) are under (0,);
+        #                                                              # (2,1,0), (2,1,1), (2,1,2) are under (2,1,)
+        #
+        #     for test_key in collect:
+        #         train_keys = [key for key in collect if key !=  test_key]
+        #         train_idx = []
+        #         for key in train_keys:
+        #             train_idx += hash_current[key]
+        #         test_idx = hash_current[test_key]
+
+
