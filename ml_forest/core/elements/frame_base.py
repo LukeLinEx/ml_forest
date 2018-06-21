@@ -57,33 +57,31 @@ class Frame(Base):
 
         create the structure for a particular layer:
         if lst_layers = [2, 3, 2], then:
+        the structure for the 0th layer is:
+        [(0,)]
         the structure for the 1st layer is:
-        [(0,), (1,)]
+        [(0,0), (0,1)]
         the structure for the 2nd layer is:
-        [(0,0),(0,1),(0,2), (1,0),(1,1),(1,2), (2,0),(2,1),(2,2)]
+        [(0,0, 0),(0,0, 1),(0,0, 2), (0,1, 0),(0,1, 1),(0,1, 2), (0,2, 0),(0,2, 1),(0,2,2)]
         the structure for the 3rd layer (which is also the structure for the whole frame) is:
-        [(0,0, 0),(0,0, 1), (0,1, 0),(0,1, 1), (0,2, 0),(0,2, 1),
-         (1,0, 0),(1,0, 1), (1,1, 0),(1,1, 1), (1,2, 0),(1,2, 1),
-         (2,0, 0),(2,0, 1), (2,1, 0),(2,1, 1), (2,2, 0),(2,2, 1)]
+        [(0,0,0, 0),(0,0,0, 1), (0,0,1, 0),(0,0,1, 1), (0,0,2, 0),(0,2, 1),
+         (0,1,0, 0),(0,1,0, 1), (0,1,1, 0),(0,1,1, 1), (0,1,2, 0),(1,2, 1),
+         (0,2,0, 0),(0,2,0, 1), (0,2,1, 0),(0,2,1, 1), (0,2,2, 0),(2,2, 1)]
 
-        :param layer: int
         :param layer: int
         :return:
         """
-        structure = []
+        structure = [[0]]
         lst_layers = self.__lst_layers
-        if not layer:
+        if layer is None:
             layer = len(lst_layers)
 
         for i in range(layer):
-            if i == 0:
-                structure = map(lambda x: [x], range(lst_layers[i]))
-            else:
-                tmp = []
-                for key in structure:
-                    for j in range(lst_layers[i]):
-                        tmp.append(key + [j])
-                structure = tmp
+            tmp = []
+            for key in structure:
+                for j in range(lst_layers[i]):
+                    tmp.append(key + [j])
+            structure = tmp
 
         return list(map(lambda x: tuple(x), structure))
 
@@ -104,6 +102,7 @@ class Frame(Base):
         :param key: hierarchical keys which indicate the fold
         :return:
         """
+        key = key[1:]
         reverse_lst_layers = self.lst_layers[::-1]
         diff = len(reverse_lst_layers) - len(key)
         key = (list(key) + [0] * diff)
@@ -162,8 +161,8 @@ class Frame(Base):
     def get_idx_for_layer(self, layer):
         if not isinstance(layer, int):
             raise TypeError('The height should be an integer.\n')
-        if layer < 1:
-            raise ValueError('The height should be at least 1.\n')
+        if layer < 0:
+            raise ValueError('The height should be at least 0.\n')
         if layer > self.depth:
             raise ValueError("The height can't exceed the depth of the Frame.\n")
         lst_idx = self.create_structure(layer)
@@ -227,22 +226,26 @@ def test1():
 
     print("\n")
     print('Test ravel_key:')
-    boo = frame.ravel_key((1,)) == (15, 30)
-    print("test raveling the key (1,) OK: {}".format(boo))
-    boo = frame.ravel_key((2, 1)) == (35, 40)
-    print("test raveling the key (2,1) OK: {}".format(boo))
-    boo = frame.ravel_key((1, 2, 1)) == (26, 27)
-    print("test raveling the key (1,2,1) OK: {}".format(boo))
+    boo = frame.ravel_key((0,1,)) == (15, 30)
+    print("test raveling the key (0,1,) OK: {}".format(boo))
+    boo = frame.ravel_key((0,2, 1)) == (35, 40)
+    print("test raveling the key (0,2,1) OK: {}".format(boo))
+    boo = frame.ravel_key((0,1, 2, 1)) == (26, 27)
+    print("test raveling the key (0,1,2,1) OK: {}".format(boo))
 
     print("\n")
-    boo = frame.get_single_fold((1, 0, 0)) == [75, 76, 77, 78, 79]
-    print("test creating fold for (1,0,0) OK: {}".format(boo))
-    boo = frame.get_single_fold((2,2)) == [
+    boo = frame.get_single_fold((0,)) == list(range(203))
+    print("test creating fold for (0,) OK: {}".format(boo))
+    boo = frame.get_single_fold((0,1, 0, 0)) == [75, 76, 77, 78, 79]
+    print("test creating fold for (0,1,0,0) OK: {}".format(boo))
+    boo = frame.get_single_fold((0,2,2)) == [
         183, 184, 185, 186, 187, 188, 189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 202
     ]
-    print("test creating fold for (2,2) OK: {}".format(boo))
+    print("test creating fold for (0,2,2) OK: {}".format(boo))
 
     print("\n")
+    boo = frame.get_idx_for_layer(0) == [list(range(203))]
+    print("test if get idx for the layer 0 correct: {}".format(boo))
     boo = frame.get_idx_for_layer(1) == [
         list(range(75)),
         list(range(75, 143)),
@@ -255,6 +258,8 @@ def test1():
         list(range(163, 183)), list(range(183, 203))
     ]
     print("test if get idx for the layer 2 correct: {}".format(boo))
+    boo = len(frame.get_idx_for_layer(3)) == 45
+    print("test if get idx for the layer 3 correct length: {}".format(boo))
 
 
 
@@ -264,8 +269,7 @@ if __name__ == '__main__':
     # project = "housing_price"
     #
     # db = {"host": bucket, "project": project}
-    frame = Frame(20, [2, 5])
-    print(frame)
+    test1()
 
 
     def get_folds(frame, current_layer):
@@ -299,7 +303,7 @@ if __name__ == '__main__':
     #     print(p[0])
     #     print(p[1])
     #     print("\n")
-    print(get_folds(frame, 1))
+    # print(get_folds(frame, 1))
 
 
 
