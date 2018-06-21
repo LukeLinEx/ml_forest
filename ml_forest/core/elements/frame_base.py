@@ -168,6 +168,32 @@ class Frame(Base):
         lst_idx = self.create_structure(layer)
         return [self.get_single_fold(key) for key in lst_idx]
 
+    def get_fold_keys(self, current_layer):
+        if current_layer == 0:
+            key_target = [] # TODO: boundary
+        elif current_layer == 1:
+            key_target = [(0,)]
+        else:
+            target_layer = current_layer - 1
+            key_target = self.create_structure(target_layer)
+
+        key_current = self.create_structure(current_layer)
+        return key_target, key_current
+
+    def get_train_test_key_pairs(self, current_layer):
+        if current_layer < 1:
+            raise ValueError("At this point, no more clean fold possible. So no more test key should be generated")
+        _, key_current = self.get_fold_keys(current_layer)
+
+        lst_train_keys = []
+        lst_test_keys = []
+        for test_k in key_current:
+            train_k = list(filter(lambda k: k[:current_layer] == test_k[:current_layer] and k != test_k, key_current))
+            lst_train_keys.append(train_k)
+            lst_test_keys.append(test_k)
+
+        return lst_test_keys, lst_train_keys
+
 # TODO: decide if we need __eq__
 #     def __eq__(self, other):
 #         return self.__num_observations == other.__num_observations and self.__lst_layers == other.__lst_layers
@@ -269,42 +295,15 @@ if __name__ == '__main__':
     # project = "housing_price"
     #
     # db = {"host": bucket, "project": project}
-    test1()
 
-
-    def get_folds(frame, current_layer):
-        if current_layer == 1:
-            key_target = [tuple()]
-        else:
-            target_layer = current_layer - 1
-            key_target = frame.create_structure(target_layer)
-
-        key_current = frame.create_structure(current_layer)
-        hash_current = dict(
-            zip(key_current, frame.get_idx_for_layer(current_layer)))  # This should work for both py2 & py3
-        return key_target, key_current, hash_current
-
-    def out_sample_train(frame, current_layer):
-        # TODO: currently not good for the top layer
-        assert current_layer>0, "At this point, no more clean fold possible. Use train_final instead"
-        key_target, key_current, hash_current = get_folds(frame, current_layer)
-
-        train_keys = []
-        test_keys = []
-        for test_k in key_current:
-            train_k = list(filter(lambda k: k[0] == test_k[0] and k != test_k, key_current))
-            train_keys.append(train_k)
-            test_keys.append(test_k)
-
-        return test_keys, train_keys
-
-
-    # for p in zip(*out_sample_train(frame, 2)):
+    frame = Frame(203, [2,3, 5])
+    # for p in zip(*frame.get_train_test_key_pairs(2)):
     #     print(p[0])
     #     print(p[1])
     #     print("\n")
-    # print(get_folds(frame, 1))
 
+    for l in frame.get_train_test_key_pairs(3):
+        print(len(l))
 
 
         # for k in key_target:
