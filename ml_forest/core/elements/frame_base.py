@@ -1,3 +1,4 @@
+from copy import deepcopy
 import numpy as np
 from ml_forest.core.elements.identity import Base
 from ml_forest.core.constructions.db_handler import DbHandler
@@ -124,10 +125,10 @@ class Frame(Base):
 
         return start, start + adding
 
-    def get_smallest_fold_start(self, flat_key):
+    def get_fold_start(self, flat_key):
         """
 
-        :param flat_key: indicates the location of the fold in the lowest layer.
+        :param flat_key: int, indicates the location of the fold in the lowest layer.
         :return:
         """
         n = self.num_observations
@@ -154,8 +155,8 @@ class Frame(Base):
         :return:
         """
         start, end = self.ravel_key(key)
-        start = self.get_smallest_fold_start(start)
-        end = self.get_smallest_fold_start(end)
+        start = self.get_fold_start(start)
+        end = self.get_fold_start(end)
         return list(range(start, end))
 
     def get_idx_for_layer(self, layer):
@@ -194,10 +195,6 @@ class Frame(Base):
 
         return lst_test_keys, lst_train_keys
 
-# TODO: decide if we need __eq__
-#     def __eq__(self, other):
-#         return self.__num_observations == other.__num_observations and self.__lst_layers == other.__lst_layers
-
     @property
     def lst_layers(self):
         return self.__lst_layers
@@ -211,83 +208,28 @@ class Frame(Base):
         return self.__depth
 
 
-# TODO: decide a derived class that can be easily used to initialize
-# class FrameInitByDeepestLayer(Frame):
-#     """
-#     The most important difference from Frame class is get_smallest_fold_start
-#     """
-#
-#     def __init__(self, num_observations, lst_layers, len_folds_deepest_layer, **kwargs):
-#         super(FrameInitByDeepestLayer, self).__init__(num_observations, lst_layers, **kwargs)
-#         self.__len_folds_deepest_layer = len_folds_deepest_layer
-#         if type(self) == FrameInitByDeepestLayer:
-#             self.save2files()
-#
-#     def get_smallest_fold_start(self, flat_key):
-#         if flat_key == 0:
-#             return 0
-#         else:
-#             start = 0
-#             for i in self.len_folds_deepest_layer[:flat_key]:
-#                 start += i
-#             return start
-#
-#     @property
-#     def len_folds_deepest_layer(self):
-#         return self.__len_folds_deepest_layer
+class FrameWithDeepestLayerSpecified(Frame):
+    """
+    The most important difference from Frame class is get_fold_start
+    """
 
+    def __init__(self, num_observations, lst_layers, len_folds_deepest_layer, **kwargs):
+        super(FrameWithDeepestLayerSpecified, self).__init__(num_observations, lst_layers, **kwargs)
+        self.__len_folds_deepest_layer = len_folds_deepest_layer
+        # TODO: saving db & files
 
-def test1():
-    print('Creating a frame:')
-    frame = Frame(203, [3, 3, 5])
+    def get_fold_start(self, flat_key):
+        if flat_key == 0:
+            return 0
+        else:
+            start = 0
+            for i in self.__len_folds_deepest_layer[:flat_key]:
+                start += i
+            return start
 
-    print("\n")
-    print("Test some attributes:")
-    boo = frame.lst_layers == [3, 3, 5]
-    print("tset lst_layers correct: {}".format(boo))
-    boo = frame.num_observations == 203
-    print("test num_observations correct: {}".format(boo))
-    boo = frame.depth == 3
-    print("test depth correct: {}".format(boo))
-
-    print("\n")
-    print('Test ravel_key:')
-    boo = frame.ravel_key((0,1,)) == (15, 30)
-    print("test raveling the key (0,1,) OK: {}".format(boo))
-    boo = frame.ravel_key((0,2, 1)) == (35, 40)
-    print("test raveling the key (0,2,1) OK: {}".format(boo))
-    boo = frame.ravel_key((0,1, 2, 1)) == (26, 27)
-    print("test raveling the key (0,1,2,1) OK: {}".format(boo))
-
-    print("\n")
-    boo = frame.get_single_fold((0,)) == list(range(203))
-    print("test creating fold for (0,) OK: {}".format(boo))
-    boo = frame.get_single_fold((0,1, 0, 0)) == [75, 76, 77, 78, 79]
-    print("test creating fold for (0,1,0,0) OK: {}".format(boo))
-    boo = frame.get_single_fold((0,2,2)) == [
-        183, 184, 185, 186, 187, 188, 189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 202
-    ]
-    print("test creating fold for (0,2,2) OK: {}".format(boo))
-
-    print("\n")
-    boo = frame.get_idx_for_layer(0) == [list(range(203))]
-    print("test if get idx for the layer 0 correct: {}".format(boo))
-    boo = frame.get_idx_for_layer(1) == [
-        list(range(75)),
-        list(range(75, 143)),
-        list(range(143, 203))
-    ]
-    print("test if get idx for the layer 1 correct: {}".format(boo))
-    boo = frame.get_idx_for_layer(2) == [
-        list(range(25)), list(range(25, 50)), list(range(50, 75)), list(range(75, 100)),
-        list(range(100, 123)), list(range(123, 143)), list((range(143, 163))),
-        list(range(163, 183)), list(range(183, 203))
-    ]
-    print("test if get idx for the layer 2 correct: {}".format(boo))
-    boo = len(frame.get_idx_for_layer(3)) == 45
-    print("test if get idx for the layer 3 correct length: {}".format(boo))
-
-
+    @property
+    def len_folds_deepest_layer(self):
+        return deepcopy(self.__len_folds_deepest_layer)
 
 
 if __name__ == '__main__':
@@ -295,26 +237,4 @@ if __name__ == '__main__':
     # project = "housing_price"
     #
     # db = {"host": bucket, "project": project}
-
     frame = Frame(203, [2,3, 5])
-    # for p in zip(*frame.get_train_test_key_pairs(2)):
-    #     print(p[0])
-    #     print(p[1])
-    #     print("\n")
-
-    for l in frame.get_train_test_key_pairs(3):
-        print(len(l))
-
-
-        # for k in key_target:
-        #     collect = filter(lambda i: i[:len(k)] == k, key_current) # (0,0), (0,1), (0,2) are under (0,);
-        #                                                              # (2,1,0), (2,1,1), (2,1,2) are under (2,1,)
-        #
-        #     for test_key in collect:
-        #         train_keys = [key for key in collect if key !=  test_key]
-        #         train_idx = []
-        #         for key in train_keys:
-        #             train_idx += hash_current[key]
-        #         test_idx = hash_current[test_key]
-
-

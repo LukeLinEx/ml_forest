@@ -7,6 +7,7 @@ setup(
     install_requires=[
         "numpy",
         "bson",
-        "pymongo"
+        "pymongo",
+        "sklearn"
     ]
 )
