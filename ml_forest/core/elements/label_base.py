@@ -4,11 +4,11 @@ from ml_forest.core.constructions.db_handler import DbHandler
 
 
 class Label(Base):
-    def __init__(self, frame, transformer, raw_y, values, db=None, filepaths=None):
+    def __init__(self, frame, l_transformer, raw_y, values, db=None, filepaths=None):
         """
 
         :param frame: ObjectId.
-        :param transformer: ObjecId or None
+        :param l_transformer: ObjecId or None
         :param raw_y: ObjectId or None
         :param values: numpy.ndarray. The actual value of the label
         :param db:
@@ -17,8 +17,8 @@ class Label(Base):
         """
         if frame and not isinstance(frame, ObjectId):
             raise TypeError("The parameter frame should be a obj_id")
-        if transformer and not isinstance(transformer, ObjectId):
-            raise TypeError("The parameter transformer should be a obj_id")
+        if l_transformer and not isinstance(l_transformer, ObjectId):
+            raise TypeError("The parameter l_transformer should be a obj_id")
         if raw_y and not isinstance(raw_y, ObjectId):
             raise TypeError("The parameter raw_y should be a obj_id")
 
@@ -26,19 +26,13 @@ class Label(Base):
 
         self.__values = values
         self.__essentials = {
-            'transformer': transformer,
+            'transformer': l_transformer,
             'frame': frame,
             'raw_y': raw_y
         }
 
         if type(self) == Label:
-            if self.db:
-                dh = DbHandler()
-                obj_id = dh.init_doc(self)
-                self.obj_id = obj_id
-            # TODO: saving the obj into file
-            if self.filepaths:
-                raise NotImplementedError("Implement the saving objects")
+            self.save_db_file()
 
     @property
     def values(self):
