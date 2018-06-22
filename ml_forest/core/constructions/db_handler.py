@@ -67,6 +67,35 @@ class DbHandler(object):
         doc_created = target_db.insert_one(document)
         return doc_created.inserted_id
 
+    @staticmethod
+    def insert_tag(obj, doc):
+        if not isinstance(doc, dict):
+            raise TypeError("The new tag(s) should be encoded into a dictionary.")
+        if not obj.obj_id:
+            raise AttributeError("The obj passed has no obj_id attribute, can't find the document.")
+
+        try:
+            db_location = obj.db
+        except AttributeError:
+            raise AttributeError("The obj passed has no db attribute, can't find the location of the document.")
+
+        try:
+            element = obj.decide_element()
+        except AttributeError:
+            msg = "The object passed has no decide_element method. Is this object originally designed to be tracked?"
+            raise AttributeError(msg)
+
+        target_db = connect_collection(db_location["host"], db_location["project"], element)
+
+        qry = deepcopy(doc)
+        qry = {"$set": qry}
+
+        target_db.update_one({"_id": obj.obj_id}, qry, upsert=True)
+
+
+
+
+
 
 if __name__ == "__main__":
     import numpy as np

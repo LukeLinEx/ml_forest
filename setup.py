@@ -9,6 +9,8 @@ setup(
         "pymongo",
         "numpy",
         "pandas",
-        "sklearn"
+        "scipy",
+        "sklearn",
+        "jupyter"
     ]
 )

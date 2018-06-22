@@ -47,7 +47,7 @@ class PipeInit(Base):
 
         # Initializing labels
         values = data[[col_y]].values
-        label = Label(frame, None, None, values, db=self.db, filepaths=self.filepaths)
+        label = Label(frame.obj_id, None, None, values, db=self.db, filepaths=self.filepaths)
         self.__label = label.obj_id
 
         # Initializing features (columns)
@@ -63,7 +63,7 @@ class PipeInit(Base):
 
                 values = data[cols].values
                 feature = Feature(
-                    frame, None, None, None, values=values, db=self.db, filepaths=self.filepaths
+                    frame.obj_id, None, None, None, values=values, db=self.db, filepaths=self.filepaths
                 )
                 self._init_features[key] = feature.obj_id
         elif not col_selected:
@@ -71,7 +71,7 @@ class PipeInit(Base):
 
             values = data[cols].values
             feature = Feature(
-                frame, None, None, None, values=values, db=self.db, filepaths=self.filepaths
+                frame.obj_id, None, None, None, values=values, db=self.db, filepaths=self.filepaths
             )
             self._init_features['raw'] = feature.obj_id
         elif isinstance(col_selected, list):
@@ -82,8 +82,7 @@ class PipeInit(Base):
         if type(self) == PipeInit:
             self.save_db_file()
 
-        # TODO: Next!!!
-        # Adding extra tag into the db document
+        DbHandler.insert_tag(self, {"tag": tag})
 
     @staticmethod
     def shuffle_pddf_idx(df, idx):
@@ -125,3 +124,5 @@ class PipeInit(Base):
 
         return X, frame
 
+if __name__ == "__main__":
+    print(Label)
