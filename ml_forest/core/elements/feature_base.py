@@ -39,8 +39,8 @@ class Feature(Base):
             'label': label
             }
 
-        if type(self) == Feature:
-            self.save_db_file()
+        # if type(self) == Feature:
+        #     self.save_db_file()
 
     @property
     def values(self):

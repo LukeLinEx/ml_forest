@@ -27,14 +27,14 @@ class Frame(Base):
         }
         self.__depth = len(lst_layers)
 
-        if type(self) == Frame:
-            if self.db:
-                dh = DbHandler()
-                obj_id = dh.init_doc(self)
-                self.obj_id = obj_id
-            # TODO: saving the obj into file
-            if self.filepaths:
-                raise NotImplementedError("Implement the saving objects")
+        # if type(self) == Frame:
+        #     if self.db:
+        #         dh = DbHandler()
+        #         obj_id = dh.init_doc(self)
+        #         self.obj_id = obj_id
+        #     # TODO: saving the obj into file
+        #     if self.filepaths:
+        #         raise NotImplementedError("Implement the saving objects")
 
     @staticmethod
     def __check(num_observations, lst_layers):

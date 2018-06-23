@@ -92,8 +92,23 @@ class DbHandler(object):
 
         target_db.update_one({"_id": obj.obj_id}, qry, upsert=True)
 
+    def search_by_essentials(self, obj, db):
+        host = db["host"]
+        project = db["project"]
+        element = obj.decide_element()
 
+        target_collection = connect_collection(host=host, database=project, collection=element)
+        essen = deepcopy(obj.essentials)
+        essen = self.mongo_doc_generator(essen)
 
+        qry = {}
+        for key in essen:
+            qry["essentials.{}".format(key)] = essen[key]
+            # TODO: to avoid essentials have more keys the essen, the below might be useful:
+            #       $where: function() { return Object.keys(this.essentials).length === len(essen) }
+
+        result = list(target_collection.find(qry))
+        return result
 
 
 
