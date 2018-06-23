@@ -1,5 +1,6 @@
 from copy import deepcopy
 from ml_forest.core.constructions.db_handler import DbHandler
+from ml_forest.core.constructions.io_handler import IOHandler
 
 
 class Base(object):
@@ -93,9 +94,9 @@ class Base(object):
             dh = DbHandler()
             obj_id = dh.init_doc(self)
             self.obj_id = obj_id
-        # TODO: saving the obj into file
         if self.filepaths:
-            raise NotImplementedError("Implement the saving objects")
+            ih = IOHandler()
+            ih.save_obj2file(self)
 
 
 if __name__ == "__main__":
