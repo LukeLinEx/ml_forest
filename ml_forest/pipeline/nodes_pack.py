@@ -21,6 +21,7 @@ class Assembler(object):
         self.nodes = nodes
 
 
+# TODO: inspect whether a obj_id should be used
 class Connector(object):
     def __init__(self):
         self.__matched = {
@@ -29,6 +30,9 @@ class Connector(object):
         }
 
     def l_locate(self, l_node):
+        if not isinstance(l_node, LNode):
+            raise TypeError("The parameter l_node should be of the type LNode.")
+
         if l_node.obj_id is None:
             lst_l_transform = self.l_prepare_locate(l_node)
             frame = l_node.pipe_init.frame
@@ -58,17 +62,20 @@ class Connector(object):
         return lst_transform_ids
 
     def f_locate(self, f_node):
+        if not isinstance(f_node, FNode):
+            raise TypeError("The parameter f_node should of the type FNode.")
+
         if f_node.obj_id is None:
-            if not isinstance(f_node.label, LNode):
+            if not isinstance(f_node.l_node, LNode):
                 raise TypeError("The label of the f_node should be of the type LNode")
             lst_transform_ids = self.f_prepare_locate(f_node)
             frame = f_node.pipe_init.frame
-            lst_fed = f_node.lst_fed
-            label = f_node.label
+            lst_fed = [f.obj_id for f in f_node.lst_fed]
+            label = f_node.l_node.obj_id
 
             dh = DbHandler()
             for f_tran in lst_transform_ids:
-                tmp = Feature(frame=frame, lst_fed=lst_fed, label=label, f_transformer=f_tran, values=None)
+                tmp = Feature(frame=frame, lst_fed=lst_fed, label=label, f_transform=f_tran, values=None)
                 tmp = dh.search_by_essentials(tmp, f_node.pipe_init.db)
 
                 if bool(tmp):
@@ -76,7 +83,7 @@ class Connector(object):
                     self.__matched["f_transform"].append(tmp)
                     break
 
-        # train if FNode still has no obj_id afer searching
+        # train if FNode still has no obj_id after searching
         if f_node.obj_id is None:
             mp = MiniPipe()
             mp.flow_to(f_node)
@@ -86,7 +93,7 @@ class Connector(object):
             if node.obj_id is None:
                 self.f_locate(node)
 
-        self.l_locate(f_node.label)
+        self.l_locate(f_node.l_node)
 
         dh = DbHandler()
         lst_transform_ids = dh.search_by_essentials(f_node.f_transform, f_node.pipe_init.db)

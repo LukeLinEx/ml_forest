@@ -37,21 +37,18 @@ class MiniPipe(object):
     @staticmethod
     def f_collect_components(f_node):
         ih = IOHandler()
-        frame = f_node.pipe_init.frame
         frame = ih.load_obj_from_file(
-            obj_id=frame, element="Frame", filepaths=f_node.pipe_init.filepaths
+            obj_id=f_node.pipe_init.frame, element="Frame", filepaths=f_node.pipe_init.filepaths
         )
 
-        l_node = f_node.l_node
         label = ih.load_obj_from_file(
-            obj_id=l_node.obj_id, element="Label", filepaths=f_node.pipe_init.filepaths
+            obj_id=f_node.l_node.obj_id, element="Label", filepaths=f_node.pipe_init.filepaths
         )
         l_values = label.values
 
         lst_fed = []
         for f in f_node.lst_fed:
-            f_id = f.obj_id
-            fed = ih.load_obj_from_file(obj_id=f_id, element="Feature", filepaths=f_node.pipe_init.filepaths)
+            fed = ih.load_obj_from_file(obj_id=f.obj_id, element="Feature", filepaths=f_node.pipe_init.filepaths)
             lst_fed.append(fed)
         if len(lst_fed) == 1:
             fed_values = lst_fed[0].values
