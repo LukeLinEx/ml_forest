@@ -5,7 +5,7 @@ from ml_forest.core.constructions.db_handler import DbHandler
 
 
 class Feature(Base):
-    def __init__(self, frame, lst_fed, f_transformer, label, values, **kwargs):
+    def __init__(self, frame, lst_fed, f_transform, label, values, **kwargs):
         """
 
 
@@ -17,7 +17,7 @@ class Feature(Base):
         """
         if frame and not isinstance(frame, ObjectId):
             raise TypeError("The parameter frame should be a obj_id")
-        if f_transformer and not isinstance(f_transformer, ObjectId):
+        if f_transform and not isinstance(f_transform, ObjectId):
             raise TypeError("The parameter f_transformer should be a obj_id")
         if label and not isinstance(label, ObjectId):
             raise TypeError("The parameter label should be a obj_id")
@@ -35,7 +35,7 @@ class Feature(Base):
         self.__essentials = {
             'frame': frame,
             'lst_fed': lst_fed,
-            'method': f_transformer,
+            'method': f_transform,
             'label': label
             }
 

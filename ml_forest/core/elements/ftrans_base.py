@@ -23,7 +23,7 @@ class FTransform(Base):
         self.__tuning = tuning
         self.__rise = rise
         self.__essentials = {}
-        self.__models = {}
+        self.__models = None
 
     @property
     def rise(self):
@@ -32,6 +32,14 @@ class FTransform(Base):
     @property
     def models(self):
         return deepcopy(self.__models)
+
+    def record_models(self, model_collection):
+        if self.__models:
+            raise ValueError("The attribute models is non-empty. This method does not allow for updating.")
+
+        if not isinstance(model_collection, dict):
+            raise TypeError("The parameter model_collection should be a dictionary.")
+        self.__models = model_collection
 
     @property
     def tuning(self):

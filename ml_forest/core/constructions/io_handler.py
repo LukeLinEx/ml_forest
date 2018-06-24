@@ -1,3 +1,5 @@
+from bson.objectid import ObjectId
+
 from ml_forest.core.utils.local_file_io import save_local, load_from_local
 
 
@@ -19,13 +21,24 @@ class IOHandler(object):
                 )
                 save_local(obj, local_path)
 
-    def load_obj_from_file(self, obj, filepaths):
-        try:
-            obj_id = obj.obj_id
-        except AttributeError:
-            raise AttributeError("The obj you passed has no obj_id, no way to locate it.")
+    def load_obj_from_file(self, obj_id, element, filepaths, cache = None):
+        """
+
+        :param obj_id: ObjectId
+        "param element: str
+        :param filepaths: dict
+        :param cache:
+        :return:
+        """
+        if not isinstance(obj_id, ObjectId):
+            raise TypeError("The parameter obj_id should be a bson.objectid.ObjectId")
         filename = str(obj_id) + ".pkl"
-        element = obj.decide_element()
+
+        # TODO: Need to find a better way to cache
+        if cache is None:
+            cache = {}
+        if obj_id in cache:
+            return cache[obj_id]
 
         for path in filepaths:
             if "home" in path:
