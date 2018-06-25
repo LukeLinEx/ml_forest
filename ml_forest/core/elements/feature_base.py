@@ -45,3 +45,7 @@ class Feature(Base):
     @property
     def values(self):
         return self.__values.copy()
+
+    @staticmethod
+    def decide_element():
+        return "Feature"

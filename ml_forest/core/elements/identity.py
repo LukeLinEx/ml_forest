@@ -85,10 +85,6 @@ class Base(object):
 
         return doc
 
-    @classmethod
-    def decide_element(cls):
-        return cls.__name__
-
     def save_db_file(self):
         if self.db:
             dh = DbHandler()

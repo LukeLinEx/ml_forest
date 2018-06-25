@@ -10,3 +10,7 @@ class LTransform(Base):
         """
         super(LTransform, self).__init__(**kwargs)
         self.__essentials = {}
+
+    @staticmethod
+    def decide_element():
+        return "LTransform"

@@ -35,6 +35,19 @@ class MiniPipe(object):
         node.obj_id = 123
 
     @staticmethod
+    def l_collect_components(l_node):
+        ih = IOHandler()
+        frame = ih.load_obj_from_file(
+            obj_id=l_node.pipe_init.frame, element="Frame", filepaths=l_node.pipe_init.filepaths
+        )
+
+        lab_fed = frame = ih.load_obj_from_file(
+            obj_id=l_node.lab_fed.obj_id, element="Label", filepaths=l_node.pipe_init.filepaths
+        )
+
+        return frame, lab_fed
+
+    @staticmethod
     def f_collect_components(f_node):
         ih = IOHandler()
         frame = ih.load_obj_from_file(

@@ -207,6 +207,10 @@ class Frame(Base):
     def depth(self):
         return self.__depth
 
+    @staticmethod
+    def decide_element():
+        return "Frame"
+
 
 class FrameWithDeepestLayerSpecified(Frame):
     """

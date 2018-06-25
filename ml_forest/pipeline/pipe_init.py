@@ -129,5 +129,10 @@ class PipeInit(Base):
 
         return X, frame
 
+    @staticmethod
+    def decide_element():
+        return "PipeInit"
+
+
 if __name__ == "__main__":
     print(Label)

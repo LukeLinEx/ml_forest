@@ -54,26 +54,28 @@ class FNode(StackingNode):
                 warn("Because obj_id is provided, it's used. The other parameters are ignored.")
         else:
             # TODO: assert non-missing conditions (low priority)
-            self.__creating_doc(pipe_init, lst_fed, f_transform, l_node)
+            pipe_init, lst_fed, f_transform, l_node = self.__inspect_doc(pipe_init, lst_fed, f_transform, l_node)
+            self.pipe_init = pipe_init
+            self.lst_fed = lst_fed
+            self.f_transform = f_transform
+            self.l_node = l_node
 
-    def __creating_doc(self, pipe_init, lst_fed, f_transform, l_node):
+    def __inspect_doc(self, pipe_init, lst_fed, f_transform, l_node):
         if not isinstance(pipe_init, PipeInit):
             raise TypeError("The parameter pipe_init should be of the type ml_forest.pipe_init.PipeInit")
-        self.pipe_init = pipe_init
 
         if lst_fed:
             for fed in lst_fed:
                 if not isinstance(fed, FNode):
                     raise TypeError("Every element in the parameter lst_fed should be a FNode")
-        self.lst_fed = lst_fed
 
         if f_transform and not isinstance(f_transform, FTransform):
             raise TypeError("The paramenter f_transform should be of the type FTransform")
-        self.f_transform = f_transform
 
         if l_node and not isinstance(l_node, LNode):
             raise TypeError("The parameter l_node should be of the type LNode")
-        self.l_node = l_node
+
+        return pipe_init, lst_fed, f_transform, l_node
 
 
 class LNode(StackingNode):
@@ -86,19 +88,20 @@ class LNode(StackingNode):
                 warn("Because obj_id is provided, it's used. The other parameters are ignored.")
         else:
             # TODO: assert non-missing conditions (low priority)
-            self.__creating_doc(pipe_init, lab_fed, l_transform)
+            pipe_init, lab_fed, l_transform = self.__inspect_doc(pipe_init, lab_fed, l_transform)
+            self.pipe_init = pipe_init
+            self.lab_fed = lab_fed
+            self.l_transform = l_transform
 
-    def __creating_doc(self, pipe_init, lab_fed, l_transform):
+    def __inspect_doc(self, pipe_init, lab_fed, l_transform):
         if not isinstance(pipe_init, PipeInit):
             raise TypeError("The parameter pipe_init should be of the type ml_forest.pipe_init.PipeInit")
-        self.pipe_init = pipe_init
 
         if lab_fed and isinstance(lab_fed, LNode):
                     raise TypeError("Every element in the parameter lst_fed should be a LNode")
-        self.lab_fed = lab_fed
 
         if l_transform and not isinstance(l_transform, LTransform):
             raise TypeError("The paramenter l_transform should be of the type LTransform")
-        self.l_transform = l_transform
 
+        return pipe_init, lab_fed, l_transform
 

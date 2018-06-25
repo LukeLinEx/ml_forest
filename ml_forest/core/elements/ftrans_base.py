@@ -45,6 +45,10 @@ class FTransform(Base):
     def tuning(self):
         return self.__tuning
 
+    @staticmethod
+    def decide_element():
+        return "FTransform"
+
 
 class SklearnModel(FTransform):
     def __init__(self, model_type, **kwargs):
