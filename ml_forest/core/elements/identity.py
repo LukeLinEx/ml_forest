@@ -85,16 +85,17 @@ class Base(object):
 
         return doc
 
-    def save_db_file(self):
+    def save_db(self):
         if self.db:
             dh = DbHandler()
             obj_id = dh.init_doc(self)
             self.obj_id = obj_id
+
+    def save_file(self):
         if self.filepaths:
             ih = IOHandler()
             ih.save_obj2file(self)
 
 
 if __name__ == "__main__":
-    b = Base()
-    print(b.decide_element())
+    pass
