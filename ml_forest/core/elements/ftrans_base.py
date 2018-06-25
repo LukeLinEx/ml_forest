@@ -5,7 +5,7 @@ __author__ = 'LukeLin'
 
 
 class FTransform(Base):
-    def __init__(self, rise, tuning=False, **kwargs):
+    def __init__(self, rise, tuning=False):
         """
 
         :param rise: int, indicates how many stages (see feature_base) to rise:
@@ -15,9 +15,8 @@ class FTransform(Base):
         :param tuning: boolean, if tuning is happening in the training folds
 
         rise and tuning are fixed for a FTransform class, so they are not saved in essentials since type is
-        :param kwargs:
         """
-        super(FTransform, self).__init__(**kwargs)
+        super(FTransform, self).__init__()
         if not isinstance(rise, int):
             raise TypeError('The {} method has a non-integer rise, need to be updated'.format(str(type(self))))
         self.__tuning = tuning

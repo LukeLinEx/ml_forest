@@ -1,24 +1,21 @@
 from copy import deepcopy
 import numpy as np
 from ml_forest.core.elements.identity import Base
-from ml_forest.core.constructions.db_handler import DbHandler
 
 __author__ = 'LukeLin'
 
 
 class Frame(Base):
-    def __init__(self, num_observations, lst_layers, **kwargs):
+    def __init__(self, num_observations, lst_layers):
         """
 
         :param num_observations: positive int
         :param lst_layers: list of int
-        :param db: list of dictionaries
-        :param filepaths: list of dictionaries
         :return:
         """
         self.__check(num_observations, lst_layers)
 
-        super(Frame, self).__init__(**kwargs)
+        super(Frame, self).__init__()
         self.__num_observations = num_observations
         self.__lst_layers = lst_layers
         self.__essentials = {
@@ -26,15 +23,6 @@ class Frame(Base):
             'lst_layers': self.__lst_layers
         }
         self.__depth = len(lst_layers)
-
-        # if type(self) == Frame:
-        #     if self.db:
-        #         dh = DbHandler()
-        #         obj_id = dh.init_doc(self)
-        #         self.obj_id = obj_id
-        #     # TODO: saving the obj into file
-        #     if self.filepaths:
-        #         raise NotImplementedError("Implement the saving objects")
 
     @staticmethod
     def __check(num_observations, lst_layers):
@@ -171,7 +159,7 @@ class Frame(Base):
 
     def get_fold_keys(self, current_layer):
         if current_layer == 0:
-            key_target = [] # TODO: boundary
+            key_target = []  # TODO: boundary
         elif current_layer == 1:
             key_target = [(0,)]
         else:
@@ -217,8 +205,8 @@ class FrameWithDeepestLayerSpecified(Frame):
     The most important difference from Frame class is get_fold_start
     """
 
-    def __init__(self, num_observations, lst_layers, len_folds_deepest_layer, **kwargs):
-        super(FrameWithDeepestLayerSpecified, self).__init__(num_observations, lst_layers, **kwargs)
+    def __init__(self, num_observations, lst_layers, len_folds_deepest_layer):
+        super(FrameWithDeepestLayerSpecified, self).__init__(num_observations, lst_layers)
         self.__len_folds_deepest_layer = len_folds_deepest_layer
         # TODO: saving db & files
 

@@ -16,7 +16,6 @@ class PipeInit(Base):
     def __init__(self, data, col_y, lst_layers, shuffle=False, stratified=False, col_selected=None,
                  tag=None, db=None, filepaths=None):
         """
-
         :param data: pandas.DataFrame. This needs to be a pandas data frame with a label column
         :param col_y: The name of the label column
         :param lst_layers: list. This gives the "lst_layers" to the Frame
@@ -31,7 +30,7 @@ class PipeInit(Base):
         if col_y not in data:
             raise KeyError("The column name of the target: col_y provided is not in the data")
 
-        super(PipeInit, self).__init__(db=db, filepaths=filepaths)
+        super(PipeInit, self).__init__()
         self.__essentials = {}
 
         # Initializing the rows
@@ -43,19 +42,19 @@ class PipeInit(Base):
             data, frame = self.get_stratified_starter_and_frame(lst_layers, data, col_y)
         else:
             frame = self.get_regular_frame(lst_layers, data)
-        frame.save_db_file()
+        frame.save_db_file(db=db, filepaths=filepaths)
         self.__frame = frame.obj_id
 
         # Initializing labels
         values = data[[col_y]].values
-        label = Label(frame.obj_id, None, None, values, db=self.db, filepaths=self.filepaths)
-        label.save_db_file()
+        label = Label(frame.obj_id, None, None, values)
+        label.save_db_file(db=db, filepaths=filepaths)
         self.__label = label.obj_id
 
         # Initializing features (columns)
         self._column_groups = {}  # to collect dict like {'num': ['colname1', 'colname2'], 'cate':['colname3'], ...}
         self._init_features = {}  # {'num': obj_id(data['colname1', 'colname2']),
-                                         #  'cate': obj_id(data['colname3']), ...}
+                                  #  'cate': obj_id(data['colname3']), ...}
 
         self._y_name = col_y
         if isinstance(col_selected, dict):
@@ -64,19 +63,15 @@ class PipeInit(Base):
                 self._column_groups[key] = cols
 
                 values = data[cols].values
-                feature = Feature(
-                    frame.obj_id, None, None, None, values=values, db=self.db, filepaths=self.filepaths
-                )
-                feature.save_db_file()
+                feature = Feature(frame.obj_id, None, None, None, values=values)
+                feature.save_db_file(db=db, filepaths=filepaths)
                 self._init_features[key] = feature.obj_id
         elif not col_selected:
             cols = data.columns
 
             values = data[cols].values
-            feature = Feature(
-                frame.obj_id, None, None, None, values=values, db=self.db, filepaths=self.filepaths
-            )
-            feature.save_db_file()
+            feature = Feature(frame.obj_id, None, None, None, values=values)
+            feature.save_db_file(db=db, filepaths=filepaths)
             self._init_features['raw'] = feature.obj_id
         elif isinstance(col_selected, list):
             raise NotImplementedError("Currently only support dictionary to initialize features")
@@ -84,10 +79,9 @@ class PipeInit(Base):
             raise ValueError("Don't know what to do with the way you specified columns")
 
         if type(self) == PipeInit:
-            self.save_db_file()
-
-        DbHandler.insert_tag(self, {"tag": tag})
-        print(self.obj_id)
+            self.save_db_file(db=db, filepaths=filepaths)
+            DbHandler.insert_tag(self, {"tag": tag})
+            print(self.obj_id)
 
     @staticmethod
     def shuffle_pddf_idx(df, idx):
@@ -95,13 +89,11 @@ class PipeInit(Base):
 
     def get_regular_frame(self, lst_layers, data):
         num_observations = data.shape[0]
-        db = self.db
-        filepaths = self.filepaths
-        frame = Frame(num_observations, lst_layers, db=db, filepaths=filepaths)
+        frame = Frame(num_observations, lst_layers)
         return frame
 
     def get_stratified_starter_and_frame(self, lst_layers, data, col_y):
-        n_splits =1
+        n_splits = 1
         for i in lst_layers:
             n_splits *= i
         skf = StratifiedKFold(n_splits=n_splits)
@@ -119,12 +111,8 @@ class PipeInit(Base):
         idx = np.concatenate(folds)
         X = self.shuffle_pddf_idx(data, idx)
 
-        db = self.db
-        filepaths = self.filepaths
         frame = FrameWithDeepestLayerSpecified(
-            num_observations=len(idx), lst_layers=lst_layers,
-            len_folds_deepest_layer=len_folds_deepest_layer,
-            db=db, filepaths=filepaths
+            num_observations=len(idx), lst_layers=lst_layers, len_folds_deepest_layer=len_folds_deepest_layer
         )
 
         return X, frame

@@ -1,19 +1,17 @@
 from bson.objectid import ObjectId
 
 from ml_forest.core.elements.identity import Base
-from ml_forest.core.constructions.db_handler import DbHandler
 
 
 class Feature(Base):
-    def __init__(self, frame, lst_fed, f_transform, label, values, **kwargs):
+    def __init__(self, frame, lst_fed, f_transform, label, values):
         """
 
 
         :param frame: ObjectId
         :param lst_fed: list of ObjectId or None
         :param label: ObjectId or None
-        :param method: ObjectId
-        :param kwargs: saving related. Check the attribute in SaveBase
+        :param f_transform: ObjectId
         """
         if frame and not isinstance(frame, ObjectId):
             raise TypeError("The parameter frame should be a obj_id")
@@ -26,7 +24,7 @@ class Feature(Base):
                 if not isinstance(f, ObjectId):
                     raise TypeError("The parameter lst_fed should consist of obj_id")
 
-        super(Feature, self).__init__(**kwargs)
+        super(Feature, self).__init__()
 
         self.__values = values
 
@@ -38,9 +36,6 @@ class Feature(Base):
             'method': f_transform,
             'label': label
             }
-
-        # if type(self) == Feature:
-        #     self.save_db_file()
 
     @property
     def values(self):

@@ -23,7 +23,6 @@ class StackingNode(object):
         else:
             raise TypeError("Why do you need to update obj_id of a node?")
 
-    # TODO: Decide if we want to add db or remove filepaths
     @property
     def filepaths(self):
         return self.__filepaths
@@ -37,7 +36,7 @@ class StackingNode(object):
 
 
 class FNode(StackingNode):
-    def __init__(self, pipe_init, lst_fed=None, f_transform=None, l_node=None, obj_id=None):
+    def __init__(self, pipe_init, lst_fed=None, f_transform=None, l_node=None, obj_id=None, filepaths=None):
         """
 
         :param pipe_init: PipeInit
@@ -45,11 +44,15 @@ class FNode(StackingNode):
         :param f_transform: FTransform or None
         :param l_node: LNode or None
         :param obj_id: ObjectId or None. FNode can be created with obj_id provided directly
+        :param filepaths: list of dict. This indicates that the object is saved in one of the paths in the list.
+                          This will only be used if obj_id is provided.
         """
         super(FNode, self).__init__()
 
         if obj_id:
             self.obj_id = obj_id
+            if filepaths:
+                self.filepaths = filepaths
             if lst_fed or f_transform or l_node:
                 warn("Because obj_id is provided, it's used. The other parameters are ignored.")
         else:
@@ -79,11 +82,22 @@ class FNode(StackingNode):
 
 
 class LNode(StackingNode):
-    def __init__(self, pipe_init, lab_fed=None, l_transform=None, obj_id=None):
+    def __init__(self, pipe_init, lab_fed=None, l_transform=None, obj_id=None, filepaths=None):
+        """
+
+        :param pipe_init:
+        :param lab_fed:
+        :param l_transform:
+        :param obj_id:
+        :param filepaths: list of dict. This indicates that the object is saved in one of the paths in the list.
+                          This will only be used if obj_id is provided.
+        """
         super(LNode, self).__init__()
 
         if obj_id:
             self.obj_id = obj_id
+            if filepaths:
+                self.filepaths = filepaths
             if pipe_init or lab_fed or l_transform:
                 warn("Because obj_id is provided, it's used. The other parameters are ignored.")
         else:

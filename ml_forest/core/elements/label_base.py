@@ -1,18 +1,15 @@
 from bson.objectid import ObjectId
 from ml_forest.core.elements.identity import Base
-from ml_forest.core.constructions.db_handler import DbHandler
 
 
 class Label(Base):
-    def __init__(self, frame, l_transform, raw_y, values, db=None, filepaths=None):
+    def __init__(self, frame, l_transform, raw_y, values):
         """
 
         :param frame: ObjectId.
-        :param l_transformer: ObjecId or None
+        :param l_transform: ObjecId or None
         :param raw_y: ObjectId or None
         :param values: numpy.ndarray. The actual value of the label
-        :param db:
-        :param filepaths:
         :return:
         """
         if frame and not isinstance(frame, ObjectId):
@@ -22,7 +19,7 @@ class Label(Base):
         if raw_y and not isinstance(raw_y, ObjectId):
             raise TypeError("The parameter raw_y should be a obj_id")
 
-        super(Label, self).__init__(db, filepaths)
+        super(Label, self).__init__()
 
         self.__values = values
         self.__essentials = {
@@ -30,9 +27,6 @@ class Label(Base):
             'frame': frame,
             'raw_y': raw_y
         }
-
-        # if type(self) == Label:
-        #     self.save_db_file()
 
     @property
     def values(self):
