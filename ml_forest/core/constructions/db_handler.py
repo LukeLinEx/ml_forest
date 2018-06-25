@@ -92,6 +92,31 @@ class DbHandler(object):
 
         target_db.update_one({"_id": obj.obj_id}, qry, upsert=True)
 
+    @staticmethod
+    def update_doc(obj, qry):
+        if not isinstance(qry, dict):
+            raise TypeError("The new updating query should be encoded into a dictionary.")
+        if not obj.obj_id:
+            raise AttributeError("The obj passed has no obj_id attribute, can't find the document.")
+
+        try:
+            db_location = obj.db
+        except AttributeError:
+            raise AttributeError("The obj passed has no db attribute, can't find the location of the document.")
+
+        try:
+            element = obj.decide_element()
+        except AttributeError:
+            msg = "The object passed has no decide_element method. Is this object originally designed to be tracked?"
+            raise AttributeError(msg)
+
+        target_db = connect_collection(db_location["host"], db_location["project"], element)
+
+        qry = deepcopy(qry)
+        qry = {"$set": qry}
+
+        target_db.update_one({"_id": obj.obj_id}, qry, upsert=True)
+
     def search_by_essentials(self, obj, db):
         host = db["host"]
         project = db["project"]
@@ -109,6 +134,21 @@ class DbHandler(object):
 
         result = list(target_collection.find(qry))
         return result
+
+    def get_storing_status_by_essentials(self, obj, db):
+        result = self.search_by_essentials(self, obj, db)
+        result_with_paths = [doc for doc in result if doc["filepaths"]]
+        if result_with_paths:
+            obj_id = result_with_paths["_id"]
+            filepaths = result_with_paths["filepaths"]
+        elif result:
+            obj_id = result["_id"]
+            filepaths = None
+        else:
+            obj_id = None
+            filepaths = None
+
+        return obj_id, None
 
 
 

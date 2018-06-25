@@ -43,6 +43,11 @@ class Base(object):
             ]
         :return:
         """
+        if self.obj_id is None:
+            msg = "The object doesn't have an obj_id, which means it's not saved in db yet," +\
+                  "so it should not be saved in storage either."
+            raise AttributeError(msg)
+
         if self.filepaths:
             raise AttributeError("The set_filepaths method in Base does not allow reseting the file paths.")
         if filepaths and not isinstance(filepaths, list):
@@ -51,6 +56,9 @@ class Base(object):
             for path in filepaths:
                 if not isinstance(path, dict):
                     raise TypeError("Currently the file paths have to be of the dictionary type")
+
+        dh = DbHandler()
+        dh.update_doc(self, {"filepaths": filepaths})
         self.__filepaths = filepaths
 
     @property
