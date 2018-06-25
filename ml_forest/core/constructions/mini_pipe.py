@@ -1,40 +1,38 @@
 import numpy as np
 
-from ml_forest.core.elements.feature_base import Feature
-from ml_forest.core.elements.label_base import Label
 from ml_forest.core.constructions.io_handler import IOHandler
 
 from ml_forest.pipeline.stacking_node import FNode, LNode
 
 
 class MiniPipe(object):
-    def flow_to(self, node, save=True):
-        filepaths = node.pipe_init.filepaths
-
+    def flow_to(self, node):
         if isinstance(node, FNode):
             if node.f_transform.rise == 1:
-                feature, f_transform = self.supervised_fit_transform(node)
-                node.obj_id = feature.obj_id
+                fh = FHandler()
+                f_values, f_transform = fh.supervised_fit_transform(node)
+                return f_values, f_transform
             else:
-                raise NotImplementedError("Need to implement for unsupervised learning")
-
-            if save:
-                f_transform.set_filepaths(filepaths)
-                f_transform.save_file()
-
-                feature.set_filepaths(filepaths)
-                feature.save_file()
+                fh = FHandler()
+                f_values, f_transform = fh.unsupervised_fit_transform(node)
+                return f_values, f_transform
 
         elif isinstance(node, LNode):
-            label, l_transform = self.label_encoding_transform(node)
-            node.onj_id = label.obj_id
+            lh = LHandler()
+            l_values, l_transform = lh.label_encoding_transform(node)
+            return l_values, l_transform
 
-            if save:
-                l_transform.set_filepaths(filepaths)
-                l_transform.save_file()
 
-                label.set_filepaths(filepaths)
-                label.save_file()
+class LHandler(object):
+    def label_encoding_transform(self, l_node):
+        if not isinstance(l_node, LNode):
+            raise TypeError("LHandler can only handle a LNode")
+
+        l_transform = l_node.l_transform
+        frame, lab_fed = self.l_collect_components(l_node)
+        new_label_values = l_transform.encode_singleton(lab_fed)
+
+        return new_label_values, l_transform
 
     @staticmethod
     def l_collect_components(l_node):
@@ -50,19 +48,31 @@ class MiniPipe(object):
 
         return frame, lab_fed
 
-    def label_encoding_transform(self, l_node):
-        db = l_node.pipe_init.db
 
-        l_transform = l_node.l_transform
-        frame, lab_fed = self.l_collect_components(l_node)
-        new_values = l_transform.encode_singleton(lab_fed)
+class FHandler(object):
+    def supervised_fit_transform(self, f_node):
+        f_transform = f_node.f_transform
+        frame, l_values, fed_values, work_layer = self.f_collect_components(f_node)
 
-        l_transform.set_db(db)
-        l_transform.save_db()
+        if work_layer == 0:
+            raise NotImplementedError("Not implemented yet. Need to be more careful.")
+        else:
+            if f_transform.tuning:
+                new_feature_values, model_collection = self.out_sample_train_with_tuning(
+                    frame, work_layer, fed_values, l_values, f_transform
+                )
+            else:
+                new_feature_values, model_collection = self.out_sample_train(
+                    frame, work_layer, fed_values, l_values, f_transform
+                )
 
-        label = Label(frame.obj_id, raw_y=lab_fed.obj_id, values=new_values, l_transform=l_transform)
+            # f_transform documenting
+            f_transform.record_models(model_collection)
 
-        return label, l_transform
+        return new_feature_values, f_transform
+
+    def unsupervised_fit_transform(self, f_node):
+        raise NotImplementedError("Need to implement for unsupervised learning")
 
     @staticmethod
     def f_collect_components(f_node):
@@ -155,37 +165,3 @@ class MiniPipe(object):
         values = np.concatenate(values, axis=0)
 
         return values, dict(models)
-
-    def supervised_fit_transform(self, f_node):
-        db = f_node.pipe_init.db
-        f_transform = f_node.f_transform
-        frame, l_values, fed_values, work_layer = self.f_collect_components(f_node)
-
-        if work_layer == 0:
-            raise NotImplementedError("Not implemented yet. Need to be more careful.")
-        else:
-            if f_transform.tuning:
-                new_feature_values, model_collection = self.out_sample_train_with_tuning(
-                    frame, work_layer, fed_values, l_values, f_transform
-                )
-            else:
-                new_feature_values, model_collection = self.out_sample_train(
-                    frame, work_layer, fed_values, l_values, f_transform
-                )
-
-            # f_transform documenting
-            f_transform.record_models(model_collection)
-            f_transform.set_db(db)
-            f_transform.save_db()
-
-            # feature documenting + saving
-            feature = Feature(
-                frame=f_node.pipe_init.frame,  # get the obj_id of frame
-                lst_fed=[f.obj_id for f in f_node.lst_fed],  # get the obj_id from lst of fnodes
-                f_transform=f_transform.obj_id, label=f_node.l_node.obj_id,
-                values=new_feature_values
-            )
-            feature.set_db(db)
-            feature.save_db()
-
-        return feature, f_transform
