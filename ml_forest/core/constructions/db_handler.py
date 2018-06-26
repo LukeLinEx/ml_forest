@@ -135,24 +135,13 @@ class DbHandler(object):
         result = list(target_collection.find(qry))
         return result
 
-    def get_storing_status_by_essentials(self, obj, db):
-        result = self.search_by_essentials(self, obj, db)
-        result_with_paths = [doc for doc in result if doc["filepaths"]]
-        if result_with_paths:
-            obj_id = result_with_paths["_id"]
-            filepaths = result_with_paths["filepaths"]
-        elif result:
-            obj_id = result["_id"]
-            filepaths = None
-        else:
-            obj_id = None
-            filepaths = None
+    @staticmethod
+    def search_by_obj_id(obj_id, element, db):
+        host = db["host"]
+        project = db["project"]
+        target_collection = connect_collection(host=host, database=project, collection=element)
 
-        return obj_id, None
+        qry = {"_id":obj_id}
 
-
-
-if __name__ == "__main__":
-    import numpy as np
-    ary = np.array([1,2,3])
-    print(ary.__class__.__bases__)
+        result = list(target_collection.find(qry))
+        return result

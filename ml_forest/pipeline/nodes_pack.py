@@ -20,46 +20,146 @@ from ml_forest.pipeline.stacking_node import FNode, LNode
 #         nodes = [FNode(pipe_init=pipe_init, obj_id=oid) for oid in obj_id_lst]
 #         self.nodes = nodes
 
-# TODO: (HIGH PRIORITY) Implement `materialized` in locate. If materialized==true, test saved and save when created
-# TODO: (HIGH PRIORITY) Implement with a better logic
-# TODO: inspect whether a obj_id should be used
+
 class Connector(object):
     def __init__(self):
-        self.__matched = {
-            "l_transform": [],
-            "f_transform": []
+        self.matched = {
+            "f": [], "l": []
         }
 
-    def l_locate(self, l_node, save_new_obtained=True):
+    def locate(self, node, save_obtained=True):
+        if isinstance(node, FNode):
+            fc = FConnector(self.matched)
+            fc.f_locate(node, save_obtained)
+        elif isinstance(node, LNode):
+            lc = LConnector(self.matched["t"])
+            lc.l_locate(node, save_obtained)
+
+
+class LConnector(object):
+    def __init__(self, matched):
+        self.matched = matched
+
+    def l_locate(self, l_node, save_obtained=True):
         if not isinstance(l_node, LNode):
             raise TypeError("The parameter l_node should be of the type LNode.")
 
+        label_obtained, l_trans_obtained = None, None
+        db = l_node.pipe_init.db
+        filepaths = l_node.pipe_init.filepaths
+
         if l_node.obj_id is None:
             lst_l_transform = self.l_prepare_locate(l_node)
-            frame = l_node.pipe_init.frame
-            lab_fed = l_node.lab_fed
+            all_docs = self.identify_label(l_node, lst_l_transform)
 
-            dh = DbHandler()
-            for l_tran in lst_l_transform:
-                tmp = Label(frame=frame, l_transform=l_tran, raw_y=lab_fed, values=None)
-                tmp = dh.search_by_essentials(tmp, l_node.pipe_init.db)
+            if all_docs:
+                doc = all_docs[0]
+                if doc["filepaths"]:
+                    # update l_node
+                    l_node.obj_id = doc["_id"]
+                    l_node.filepaths = doc["filepaths"]
 
-                if bool(tmp):
-                    l_node.obj_id = tmp
-                    self.__matched["l_transform"].append(l_tran)
-                    break
+                elif save_obtained:
+                    label, l_transform = self.materialize_with_existing_doc(l_node=l_node, doc=doc)
 
-        if l_node.obj_id is None:
-            mp = MiniPipe()
-            label, l_transform = mp.flow_to(l_node)
-            l_node.obj_id = label.obj_id
-            if save_new_obtained:
-                l_transform.set_filepaths(l_node.pipe_init.filepaths)
-                l_transform.save_file()
-                label.set_filepaths(l_node.pipe_init.filepaths)
-                label.save_file()
+                    # save obtained
+                    l_transform.save_file(filepaths)
+                    label.save_file(filepaths)
+
+                    # update l_node
+                    l_node.obj_id = doc["_id"]
+                    l_node.filepaths = filepaths
+
+                    # for return
+                    label_obtained, l_trans_obtained = label, l_transform
+
+                else:
+                    # update l_node
+                    l_node.obj_id = doc["_id"]
+
+            elif save_obtained:
+                label, l_transform = self.set_off_and_record(l_node, db)
+
+                # save obtained
+                l_transform.save_file(filepaths)
+                label.save_file(filepaths)
+
+                # update l_node
+                l_node.obj_id = label.obj_id
+                l_node.filepaths = label.filepaths
+
+                # for return
+                label_obtained, l_trans_obtained = label, l_transform
+
             else:
-                return label, l_transform
+                label, l_transform = self.set_off_and_record(l_node, db)
+
+                # update l_node
+                l_node.obj_id = label.obj_id
+
+                # for return
+                label_obtained, l_trans_obtained = label, l_transform
+        else:
+            if save_obtained:
+                dh = DbHandler()
+                doc = dh.search_by_obj_id(obj_id=l_node.obj_id, element="Label", db=db)
+                label, l_transform = self.materialize_with_existing_doc(l_node=l_node, doc=doc)
+
+                # save obtained
+                l_transform.save_file(filepaths)
+                label.save_file(filepaths)
+
+                # update l_node
+                l_node.filepaths = filepaths
+
+                # for return
+                label_obtained, l_trans_obtained = label, l_transform
+
+        return label_obtained, l_trans_obtained
+
+    def materialize_with_existing_doc(self, doc, l_node):
+        frame = l_node.pipe_init.frame
+        lab_fed = l_node.lab_fed.obj_id
+        l_trans_id = doc["essentials"]["l_transform"]
+
+        mp = MiniPipe()
+        l_values, l_transform = mp.flow_to(l_node)
+
+        l_transform.obj_id = l_trans_id
+        self.matched.append(l_trans_id)
+
+        label = Label(frame=frame, l_transform=l_transform.obj_id, raw_y=lab_fed, values=l_values)
+        label.obj_id = doc["_id"]
+
+        return label, l_transform
+
+    def set_off_and_record(self, l_node, db):
+        frame = l_node.pipe_init.frame
+        lab_fed = l_node.lab_fed.obj_id
+
+        mp = MiniPipe()
+        l_values, l_transform = mp.flow_to(l_node)
+        l_transform.save_db(db)
+        self.matched.append(l_transform.obj_id)
+
+        label = Label(frame=frame, l_transform=l_transform.obj_id, raw_y=lab_fed, values=l_values)
+        label.save_db(db)
+
+        return label, l_transform
+
+    @staticmethod
+    def identify_label(l_node, lst_l_transform):
+        frame = l_node.pipe_init.frame
+        lab_fed = l_node.lab_fed.obj_id
+
+        dh = DbHandler()
+        all_docs = []
+        for l_tran in lst_l_transform:
+            tmp = Label(frame=frame, l_transform=l_tran, raw_y=lab_fed, values=None)
+            all_docs.extend(dh.search_by_essentials(tmp, l_node.pipe_init.db))
+        all_docs = sorted(all_docs, key=lambda d: not bool(d["filepaths"]))
+
+        return all_docs
 
     def l_prepare_locate(self, l_node):
         if not l_node.lab_fed.obj_id:
@@ -67,52 +167,157 @@ class Connector(object):
 
         dh = DbHandler()
         lst_transform_ids = dh.search_by_essentials(l_node.l_transform, l_node.pipe_init.db)
-        lst_transform_ids = [x["_id"]for x in lst_transform_ids if x["_id"] not in self.__matched["l_transform"]]
+        lst_transform_ids = [x["_id"]for x in lst_transform_ids if x["_id"] not in self.matched]
         return lst_transform_ids
 
-    def f_locate(self, f_node, save_new_obtained=True):
+
+class FConnector(object):
+    def __init__(self, matched):
+        self.matched = matched["f"]
+        self.l_matched = matched["l"]
+
+    def f_locate(self, f_node, save_obtained=True):
         if not isinstance(f_node, FNode):
             raise TypeError("The parameter f_node should of the type FNode.")
 
+        feature_obtained, f_trans_obtained = None, None
+        db = f_node.pipe_init.db
+        filepaths = f_node.pipe_init.filepaths
+
         if f_node.obj_id is None:
             if not isinstance(f_node.l_node, LNode):
-                raise TypeError("The label of the f_node should be of the type LNode")
-            lst_transform_ids = self.f_prepare_locate(f_node)
-            frame = f_node.pipe_init.frame
-            lst_fed = [f.obj_id for f in f_node.lst_fed]
-            label = f_node.l_node.obj_id
+                raise TypeError("The attribute f_node.l_node should be of the type LNode")
 
-            dh = DbHandler()
-            for f_tran in lst_transform_ids:
-                tmp = Feature(frame=frame, lst_fed=lst_fed, label=label, f_transform=f_tran, values=None)
-                tmp = dh.search_by_essentials(tmp, f_node.pipe_init.db)
+            lst_f_transform = self.f_prepare_locate(f_node)
+            all_docs = self.identify_feature(f_node, lst_f_transform)
 
-                if bool(tmp):
-                    f_node.obj_id = tmp
-                    self.__matched["f_transform"].append(tmp)
-                    break
+            if all_docs:
+                doc = all_docs[0]
+                if doc["filepaths"]:
+                    # update f_node
+                    f_node.obj_id = doc["_id"]
+                    f_node.filepaths = doc["filepaths"]
 
-        # train if FNode still has no obj_id after searching
-        if f_node.obj_id is None:
-            mp = MiniPipe()
-            feature, f_transform = mp.flow_to(f_node)
-            if save_new_obtained:
-                f_transform.set_filepaths(f_node.pipe_init.filepaths)
-                f_transform.save_file()
-                feature.set_filepaths(f_node.pipe_init.filepaths)
-                feature.save_file()
+                elif save_obtained:
+                    feature, f_transform = self.materialize_with_existing_doc(f_node=f_node, doc=doc)
+
+                    # save obtained
+                    f_transform.save_file(filepaths)
+                    feature.save_file(filepaths)
+
+                    # update f_node
+                    f_node.obj_id = doc["_id"]
+                    f_node.filepaths = filepaths
+
+                    # for return
+                    feature_obtained, f_trans_obtained = feature, f_transform
+
+                else:
+                    # update f_node
+                    f_node.obj_id = doc["_id"]
+
+            elif save_obtained:
+                feature, f_transform = self.set_off_and_record(f_node, db)
+
+                # save obtained
+                f_transform.save_file(filepaths)
+                feature.save_file(filepaths)
+
+                # update f_node
+                f_node.obj_id = feature.obj_id
+                f_node.filepaths = feature.filepaths
+
+                # for return
+                feature_obtained, f_trans_obtained = feature, f_transform
+
             else:
-                return feature, f_transform
+                feature, f_transform = self.set_off_and_record(f_node, db)
+
+                # update f_node
+                f_node.obj_id = feature.obj_id
+
+                # for return
+                feature_obtained, f_trans_obtained = feature, f_transform
+
+        else:
+            if save_obtained:
+                dh = DbHandler()
+                doc = dh.search_by_obj_id(obj_id=f_node.obj_id, element="Feature", db=db)
+                feature, f_transform = self.materialize_with_existing_doc(f_node=f_node, doc=doc)
+
+                # save obtained
+                f_transform.save_file(filepaths)
+                feature.save_file(filepaths)
+
+                # update f_node
+                f_node.filepaths = filepaths
+
+                # for return
+                feature_obtained, f_trans_obtained = feature, f_transform
+
+        return feature_obtained, f_trans_obtained
+
+    @staticmethod
+    def identify_feature(f_node, lst_f_transform):
+        frame = f_node.pipe_init.frame
+        lst_fed = [f.obj_id for f in f_node.lst_fed]
+
+        dh = DbHandler()
+        all_docs = []
+        for f_tran in lst_f_transform:
+            tmp = Feature(frame=frame, f_transform=f_tran, lst_fed=lst_fed, label=f_node.l_node.obj_id, values=None)
+            all_docs.extend(dh.search_by_essentials(tmp, f_node.pipe_init.db))
+        all_docs = sorted(all_docs, key=lambda d: not bool(d["filepaths"]))
+
+        return all_docs
+
+    def materialize_with_existing_doc(self, f_node, doc):
+        frame = f_node.pipe_init.frame
+        label = doc["essentials"]["label"]
+        lst_fed = [f.obj_id for f in f_node.lst_fed]
+        f_trans_id = doc["essentials"]["f_transform"]
+
+        mp = MiniPipe()
+        f_values, f_transform = mp.flow_to(f_node)
+
+        f_transform.obj_id = f_trans_id
+        self.matched.append(f_trans_id)
+
+        feature = Feature(
+            frame=frame, f_transform=f_trans_id, label=label, lst_fed=lst_fed, values=f_values
+        )
+        feature.obj_id = doc["_id"]
+
+        return feature, f_transform
+
+    def set_off_and_record(self, f_node, db):
+        frame = f_node.pipe_init.frame
+        lst_fed = [f.obj_id for f in f_node.lst_fed]
+        label = f_node.l_node.obj_id
+
+        mp = MiniPipe()
+        f_values, f_transform = mp.flow_to(f_node)
+
+        f_transform.save_db(db)
+        self.matched.append(f_transform.obj_id)
+
+        feature = Feature(
+            frame=frame, lst_fed=lst_fed, f_transform=f_transform.obj_id, label=label, values=f_values
+        )
+        feature.save_db(db)
+
+        return feature, f_transform
 
     def f_prepare_locate(self, f_node):
         for node in f_node.lst_fed:
             if node.obj_id is None:
                 self.f_locate(node)
 
-        self.l_locate(f_node.l_node)
+        lc = LConnector(self.l_matched)
+        lc.l_locate(f_node.l_node)
 
         dh = DbHandler()
         lst_transform_ids = dh.search_by_essentials(f_node.f_transform, f_node.pipe_init.db)
-        lst_transform_ids = [x["_id"]for x in lst_transform_ids if x["_id"] not in self.__matched["f_transform"]]
+        lst_transform_ids = [x["_id"]for x in lst_transform_ids if x["_id"] not in self.matched]
 
         return lst_transform_ids
