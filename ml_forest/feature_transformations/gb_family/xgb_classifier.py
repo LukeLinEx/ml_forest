@@ -5,11 +5,11 @@ from ml_forest.core.elements.ftrans_base import FTransform
 class XGBClassifierWithTuning(FTransform):
     def __init__(
             self, objective="multi:softprob", eval_metric="mlogloss", eta=0.3, gamma=0, max_depth=6, min_child_weigh=1,
-            subsample=1, colsample_bytree=1, colsample_bylevel=1, reg_lambda=1, alpha=0, max_leaves=0, max_bin=256,
+            subsample=1, colsample_bytree=1, colsample_bylevel=1, reg_lambda=1, alpha=1, max_leaves=0, max_bin=256,
 
-            num_boost_round=10, feval=None, predict_proba=False, early_stopping_rounds=50,
+            num_boost_round=10, early_stopping_rounds=50, feval=None, predict_proba=False,
 
-            num_class=None, obj=None, maximize=None, seed=0, verbose_eval=100):
+            obj=None, maximize=None, seed=0, verbose_eval=100, num_class=None):
         """
 
         ** TODO: not knowing yet how to add the 5 items into essentials
@@ -23,18 +23,18 @@ class XGBClassifierWithTuning(FTransform):
 
         # These go to the XGB's booster
         self.__essentials = {
-            "objective":objective, "eval_metric":eval_metric, "eta":eta, "gamma":gamma,
-            "max_depth":max_depth, "min_child_weigh":min_child_weigh, "subsample":subsample,
-            "colsample_bytree":colsample_bytree, "colsample_bylevel":colsample_bylevel,
-            "reg_lambda":reg_lambda, "alpha":alpha, "max_leaves":max_leaves, "max_bin":max_bin,
+            "objective": objective, "eval_metric": eval_metric, "eta": eta, "gamma": gamma,
+            "max_depth": max_depth, "min_child_weigh": min_child_weigh, "subsample": subsample,
+            "colsample_bytree": colsample_bytree, "colsample_bylevel": colsample_bylevel,
+            "reg_lambda": reg_lambda, "alpha": alpha, "max_leaves": max_leaves, "max_bin": max_bin,
+            "predict_proba": predict_proba,
 
             # These go to XGB Python API
-            "num_boost_round": num_boost_round, "feval": feval, "predict_proba": predict_proba,
-            "early_stopping_rounds": early_stopping_rounds,
-
+            "num_boost_round": num_boost_round, "feval": feval, "early_stopping_rounds": early_stopping_rounds
         }
 
         # parameters that doesn't go to essentials
+        self._num_class = num_class
         self._seed = seed
         self.verbose_eval = verbose_eval
 
@@ -45,20 +45,22 @@ class XGBClassifierWithTuning(FTransform):
 
         pkeys = [
             "objective", "eval_metric", "eta", "gamma", "max_depth", "min_child_weigh", "subsample",
-            "colsample_bytree", "colsample_bylevel", "reg_lambda", "alpha", "max_leaves", "max_bin",
-            "num_boost_round", "feval", "predict_proba", "early_stopping_rounds"
+            "colsample_bytree", "colsample_bylevel", "reg_lambda", "alpha", "max_leaves", "max_bin"
         ]
 
-        params = {key:self.__essentials[key] for key in pkeys}
+        params = {key: self.__essentials[key] for key in pkeys}
 
         params["silent"] = 1
         params["seed"] = self._seed
+        params["num_class"] = self._num_class
 
         num_boost_round = self.__essentials['num_boost_round']
         model = xgb.train(
-            params=params, dtrain=xg_train, num_boost_round=num_boost_round,
+            params=params, dtrain=xg_train,
             evals=[(xg_train, 'train'), (xg_valid, 'eval')],
-            feval = self.__essentials["feval"],
+
+            feval=self.__essentials["feval"],
+            num_boost_round=num_boost_round,
             early_stopping_rounds=self.__essentials["early_stopping_rounds"],
             verbose_eval=self.verbose_eval
         )

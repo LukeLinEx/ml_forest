@@ -21,11 +21,11 @@ class IOHandler(object):
                 )
                 save_local(obj, local_path)
 
-    def load_obj_from_file(self, obj_id, element, filepaths, cache = None):
+    def load_obj_from_file(self, obj_id, element, filepaths, cache=None):
         """
 
         :param obj_id: ObjectId
-        "param element: str
+        :param element: str
         :param filepaths: dict
         :param cache:
         :return:

@@ -10,7 +10,7 @@ class DbHandler(object):
     def mongo_doc_generator(self, doc):
         """
         Here we need to change the type of the values that can't be encoded to mongodb into string
-        :param docs: dictionary
+        :param doc: dictionary
 
             ::types not need to be changed:
             1. float/int/string
@@ -141,7 +141,7 @@ class DbHandler(object):
         project = db["project"]
         target_collection = connect_collection(host=host, database=project, collection=element)
 
-        qry = {"_id":obj_id}
+        qry = {"_id": obj_id}
 
         result = target_collection.find_one(qry)
         return result

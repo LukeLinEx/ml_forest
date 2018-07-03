@@ -4,16 +4,15 @@ from ml_forest.core.elements.ltrans_base import LTransform
 
 
 class TrivialEncoder(LTransform):
-    def __init__(self, **kwargs):
+    def __init__(self):
         """
 
-        :param kwargs:  saving path related
         :return:
         """
-        super(TrivialEncoder, self).__init__(**kwargs)
+        super(TrivialEncoder, self).__init__()
 
         # attributes characterize the instance
-        self._classes=None
+        self._classes = None
         self.__essentials = {}
 
     def encode_whole(self, fed_y):
@@ -37,7 +36,7 @@ class TrivialEncoder(LTransform):
             raise TypeError("fed_y_value is supposed to be a numpy array")
 
         encoded_values = np.argmax(
-            fed_y_value.reshape(-1, 1)==self._classes, axis=1
+            fed_y_value.reshape(-1, 1) == self._classes, axis=1
         )
         encoded_values = encoded_values.reshape(-1, 1)
 
