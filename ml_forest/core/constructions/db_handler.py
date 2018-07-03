@@ -143,5 +143,5 @@ class DbHandler(object):
 
         qry = {"_id":obj_id}
 
-        result = list(target_collection.find(qry))
+        result = target_collection.find_one(qry)
         return result

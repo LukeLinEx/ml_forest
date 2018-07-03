@@ -208,7 +208,8 @@ class FrameWithDeepestLayerSpecified(Frame):
     def __init__(self, num_observations, lst_layers, len_folds_deepest_layer):
         super(FrameWithDeepestLayerSpecified, self).__init__(num_observations, lst_layers)
         self.__len_folds_deepest_layer = len_folds_deepest_layer
-        # TODO: saving db & files
+
+        self.__essentials = {}
 
     def get_fold_start(self, flat_key):
         if flat_key == 0:

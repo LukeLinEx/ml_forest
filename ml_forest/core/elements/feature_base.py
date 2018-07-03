@@ -2,6 +2,33 @@ from bson.objectid import ObjectId
 
 from ml_forest.core.elements.identity import Base
 
+"""
+      Let depth be a parameter for stack; height for feature. Height should be depth + 1
+      For ex:
+             For stack              For feature
+                                    ___________  stage 3
+             ---------  layer 1     ___________  stage 2
+             ---------  layer 2     ___________  stage 1
+             ---------  layer 3     ___________  stage 0
+
+             ^^^^^^^^^              ^^^^^^^^^^^
+             depth = 3              height =3 (We don't need height attribute....stage is enough)
+
+        The reason of naming:
+            1. depth and layer for stack
+            2. height and stage for feature
+        is because when creating stack, we do it top down; but bottom up when training. See blow:
+
+                    layer 1      layer 2
+                 I  fold[0]      fold[0, 0]
+                 I  fold[0]      fold[0, 1]
+                 -------------
+                 I  fold[1]      fold[1, 0]
+                 I  fold[1]      fold[1, 1]
+            stage 2        stage 1       stage 0
+        However, training starts from the lowest/deepest layer
+"""
+
 
 class Feature(Base):
     def __init__(self, frame, lst_fed, f_transform, label, values):
@@ -33,7 +60,7 @@ class Feature(Base):
         self.__essentials = {
             'frame': frame,
             'lst_fed': lst_fed,
-            'method': f_transform,
+            'f_transform': f_transform,
             'label': label
             }
 
@@ -44,3 +71,14 @@ class Feature(Base):
     @staticmethod
     def decide_element():
         return "Feature"
+
+    @property
+    def stage(self):
+        return self.__stage
+
+    @stage.setter
+    def stage(self, val):
+        if self.__stage is not None:
+            raise ValueError("The method doesn't support update stage")
+        else:
+            self.__stage = val

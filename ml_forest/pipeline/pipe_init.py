@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from copy import deepcopy
 from sklearn.model_selection import StratifiedKFold
 
 from ml_forest.core.elements.identity import Base
@@ -52,9 +53,9 @@ class PipeInit(Base):
         self.__label = label.obj_id
 
         # Initializing features (columns)
-        self._column_groups = {}  # to collect dict like {'num': ['colname1', 'colname2'], 'cate':['colname3'], ...}
-        self._init_features = {}  # {'num': obj_id(data['colname1', 'colname2']),
-                                  #  'cate': obj_id(data['colname3']), ...}
+        self._column_groups = {}    # to collect dict like {'num': ['colname1', 'colname2'], 'cate':['colname3'], ...}
+        self._init_features = {}    # {'num': obj_id(data['colname1', 'colname2']),
+                                    #  'cate': obj_id(data['colname3']), ...}
 
         self._y_name = col_y
         if isinstance(col_selected, dict):
@@ -64,6 +65,7 @@ class PipeInit(Base):
 
                 values = data[cols].values
                 feature = Feature(frame.obj_id, None, None, None, values=values)
+                feature.stage = 0
                 feature.save_db_file(db=db, filepaths=filepaths)
                 self._init_features[key] = feature.obj_id
         elif not col_selected:
@@ -102,12 +104,12 @@ class PipeInit(Base):
         folds = []
         while True:
             try:
-                _, fold = folds_deepest_layer.next()
+                _, fold = folds_deepest_layer.__next__()
                 folds.append(fold)
             except StopIteration:
                 break
 
-        len_folds_deepest_layer = map(len, folds)
+        len_folds_deepest_layer = list(map(len, folds))
         idx = np.concatenate(folds)
         X = self.shuffle_pddf_idx(data, idx)
 
@@ -116,6 +118,18 @@ class PipeInit(Base):
         )
 
         return X, frame
+
+    @property
+    def init_features(self):
+        return deepcopy(self._init_features)
+
+    @property
+    def frame(self):
+        return self.__frame
+
+    @property
+    def label(self):
+        return self.__label
 
     @staticmethod
     def decide_element():

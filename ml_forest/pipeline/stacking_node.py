@@ -111,8 +111,8 @@ class LNode(StackingNode):
         if not isinstance(pipe_init, PipeInit):
             raise TypeError("The parameter pipe_init should be of the type ml_forest.pipe_init.PipeInit")
 
-        if lab_fed and isinstance(lab_fed, LNode):
-                    raise TypeError("Every element in the parameter lst_fed should be a LNode")
+        if lab_fed and not isinstance(lab_fed, LNode):
+            raise TypeError("Every element in the parameter lab_fed should be a LNode")
 
         if l_transform and not isinstance(l_transform, LTransform):
             raise TypeError("The paramenter l_transform should be of the type LTransform")

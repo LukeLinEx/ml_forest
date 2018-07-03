@@ -51,6 +51,11 @@ class FTransform(Base):
 
 class SklearnModel(FTransform):
     def __init__(self, model_type, **kwargs):
+        """
+
+        :param model_type:
+        :param kwargs: rise and tuning
+        """
         super(SklearnModel, self).__init__(**kwargs)
         self.__model_type = model_type
 

@@ -1,14 +1,13 @@
 from sklearn.linear_model import Lasso
-
 from ml_forest.core.elements.ftrans_base import SklearnModel
 
 
 class GenerateLasso(SklearnModel):
     def __init__(
             self, alpha=1.0, fit_intercept=True, max_iter=1000, normalize=True, precompute=False, positive=False,
-            random_state=None, selection='cyclic', tol=0.0001, warm_start=False, **kwargs
+            random_state=None, selection='cyclic', tol=0.0001, warm_start=False
     ):
-        super(GenerateLasso, self).__init__(model_type=Lasso, rise=1, **kwargs)
+        super(GenerateLasso, self).__init__(model_type=Lasso, rise=1)
 
         # get essentials
         essential_keys = {
@@ -30,6 +29,6 @@ if __name__ == "__main__":
     X = iris.data
     y = iris.target.reshape(-1, 1)
 
-    mod, v1 = lasso.fit_singleton(X, y, X)
-    v2 = lasso.transform_singleton(mod, X)
-    print((v1 == v2).all())
+    # mod, v1 = lasso.fit_singleton(X, y, X)
+    # v2 = lasso.transform_singleton(mod, X)
+    # print((v1 == v2).all())

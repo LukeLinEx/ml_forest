@@ -116,6 +116,9 @@ class Base(object):
         self.save_db(db)
         self.save_file(filepaths)
 
+    @staticmethod
+    def decide_element():
+        raise NotImplementedError
 
 if __name__ == "__main__":
     pass

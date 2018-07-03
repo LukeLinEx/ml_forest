@@ -1,6 +1,7 @@
 from ml_forest.core.elements.feature_base import Feature
 from ml_forest.core.elements.label_base import Label
 from ml_forest.core.constructions.db_handler import DbHandler
+from ml_forest.core.constructions.io_handler import IOHandler
 from ml_forest.core.constructions.mini_pipe import MiniPipe
 
 from ml_forest.pipeline.stacking_node import FNode, LNode
@@ -100,17 +101,40 @@ class LConnector(object):
                 # for return
                 label_obtained, l_trans_obtained = label, l_transform
         else:
-            if save_obtained:
-                dh = DbHandler()
-                doc = dh.search_by_obj_id(obj_id=l_node.obj_id, element="Label", db=db)
+            dh = DbHandler()
+            doc = dh.search_by_obj_id(obj_id=l_node.obj_id, element="Label", db=db)
+
+            if doc["filepaths"]:
+                doc_filepaths = doc["filepaths"]    # Prevent potentials errors resulted from different
+                                                    # filepaths from doc and pipe_init
+
+                # update l_node
+                if l_node.filepaths is None:
+                    l_node.filepaths = filepaths
+
+                # for return
+                ih = IOHandler()
+                label = ih.load_obj_from_file(l_node.obj_id, "Label", doc_filepaths)
+                l_transform = ih.load_obj_from_file(doc["essentials"]["l_transform"], "LTransform", doc_filepaths)
+
+                # for return
+                label_obtained, l_trans_obtained = label, l_transform
+
+            elif save_obtained:
                 label, l_transform = self.materialize_with_existing_doc(l_node=l_node, doc=doc)
 
                 # save obtained
-                l_transform.save_file(filepaths)
                 label.save_file(filepaths)
+                l_transform.save_file(filepaths)
 
                 # update l_node
                 l_node.filepaths = filepaths
+
+                # for return
+                label_obtained, l_trans_obtained = label, l_transform
+
+            else:
+                label, l_transform = self.materialize_with_existing_doc(l_node=l_node, doc=doc)
 
                 # for return
                 label_obtained, l_trans_obtained = label, l_transform
@@ -240,9 +264,25 @@ class FConnector(object):
                 feature_obtained, f_trans_obtained = feature, f_transform
 
         else:
-            if save_obtained:
-                dh = DbHandler()
-                doc = dh.search_by_obj_id(obj_id=f_node.obj_id, element="Feature", db=db)
+            dh = DbHandler()
+            doc = dh.search_by_obj_id(obj_id=f_node.obj_id, element="Feature", db=db)
+
+            if doc["filepaths"]:
+                doc_filepaths = doc["filepaths"]    # Prevent potentials errors resulted from different
+                                                    # filepaths from doc and pipe_init
+
+                # update f_node
+                if f_node.filepaths is None:
+                    f_node.filepaths = filepaths
+
+                ih = IOHandler()
+                feature = ih.load_obj_from_file(f_node.obj_id, "Feature", doc_filepaths)
+                f_transform = ih.load_obj_from_file(doc["essentials"]["f_transform"], "FTransform", doc_filepaths)
+
+                # for return
+                feature_obtained, f_trans_obtained = feature, f_transform
+
+            elif save_obtained:
                 feature, f_transform = self.materialize_with_existing_doc(f_node=f_node, doc=doc)
 
                 # save obtained
@@ -251,6 +291,11 @@ class FConnector(object):
 
                 # update f_node
                 f_node.filepaths = filepaths
+
+                # for return
+                feature_obtained, f_trans_obtained = feature, f_transform
+            else:
+                feature, f_transform = self.materialize_with_existing_doc(f_node=f_node, doc=doc)
 
                 # for return
                 feature_obtained, f_trans_obtained = feature, f_transform
@@ -278,7 +323,7 @@ class FConnector(object):
         f_trans_id = doc["essentials"]["f_transform"]
 
         mp = MiniPipe()
-        f_values, f_transform = mp.flow_to(f_node)
+        f_values, f_transform, stage = mp.flow_to(f_node)
 
         f_transform.obj_id = f_trans_id
         self.matched.append(f_trans_id)
@@ -286,6 +331,7 @@ class FConnector(object):
         feature = Feature(
             frame=frame, f_transform=f_trans_id, label=label, lst_fed=lst_fed, values=f_values
         )
+        feature.stage = stage
         feature.obj_id = doc["_id"]
 
         return feature, f_transform
@@ -296,7 +342,7 @@ class FConnector(object):
         label = f_node.l_node.obj_id
 
         mp = MiniPipe()
-        f_values, f_transform = mp.flow_to(f_node)
+        f_values, f_transform, stage = mp.flow_to(f_node)
 
         f_transform.save_db(db)
         self.matched.append(f_transform.obj_id)
@@ -304,6 +350,7 @@ class FConnector(object):
         feature = Feature(
             frame=frame, lst_fed=lst_fed, f_transform=f_transform.obj_id, label=label, values=f_values
         )
+        feature.stage = stage
         feature.save_db(db)
 
         return feature, f_transform

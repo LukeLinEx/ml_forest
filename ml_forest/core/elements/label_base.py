@@ -23,7 +23,7 @@ class Label(Base):
 
         self.__values = values
         self.__essentials = {
-            'transformer': l_transform,
+            'l_transform': l_transform,
             'frame': frame,
             'raw_y': raw_y
         }

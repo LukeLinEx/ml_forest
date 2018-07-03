@@ -10,8 +10,8 @@ class MiniPipe(object):
         if isinstance(node, FNode):
             if node.f_transform.rise == 1:
                 fh = FHandler()
-                f_values, f_transform = fh.supervised_fit_transform(node)
-                return f_values, f_transform
+                f_values, f_transform, stage = fh.supervised_fit_transform(node)
+                return f_values, f_transform, stage
             else:
                 fh = FHandler()
                 f_values, f_transform = fh.unsupervised_fit_transform(node)
@@ -30,7 +30,7 @@ class LHandler(object):
 
         l_transform = l_node.l_transform
         frame, lab_fed = self.l_collect_components(l_node)
-        new_label_values = l_transform.encode_singleton(lab_fed)
+        new_label_values = l_transform.encode_whole(lab_fed)
 
         return new_label_values, l_transform
 
@@ -52,24 +52,25 @@ class LHandler(object):
 class FHandler(object):
     def supervised_fit_transform(self, f_node):
         f_transform = f_node.f_transform
-        frame, l_values, fed_values, work_layer = self.f_collect_components(f_node)
+        frame, l_values, fed_values, prevstage = self.f_collect_components(f_node)
+        work_layer = frame.depth - prevstage
 
         if work_layer == 0:
             raise NotImplementedError("Not implemented yet. Need to be more careful.")
         else:
             if f_transform.tuning:
-                new_feature_values, model_collection = self.out_sample_train_with_tuning(
+                new_feature_values, model_collection, stage = self.out_sample_train_with_tuning(
                     frame, work_layer, fed_values, l_values, f_transform
                 )
             else:
-                new_feature_values, model_collection = self.out_sample_train(
+                new_feature_values, model_collection, stage = self.out_sample_train(
                     frame, work_layer, fed_values, l_values, f_transform
                 )
 
             # f_transform documenting
             f_transform.record_models(model_collection)
 
-        return new_feature_values, f_transform
+        return new_feature_values, f_transform, stage
 
     def unsupervised_fit_transform(self, f_node):
         raise NotImplementedError("Need to implement for unsupervised learning")
@@ -93,12 +94,11 @@ class FHandler(object):
         if len(lst_fed) == 1:
             fed_values = lst_fed[0].values
         else:
-            fed_values = np.concatenate(map(lambda x: x.values, lst_fed), axis=1)
+            fed_values = np.concatenate(list(map(lambda x: x.values, lst_fed)), axis=1)
 
         prevstage = max(map(lambda x: x.stage, lst_fed))
-        work_layer = frame.depth - prevstage
 
-        return frame, l_values, fed_values, work_layer
+        return frame, l_values, fed_values, prevstage
 
     @staticmethod
     def out_sample_train(frame, work_layer, fed_values, l_values, f_transform):
@@ -126,8 +126,10 @@ class FHandler(object):
             values.append(tmp)
 
         values = np.concatenate(values, axis=0)
+        prevstage = frame.depth - work_layer
+        stage = prevstage + 1
 
-        return values, dict(models)
+        return values, dict(models), stage
 
     @staticmethod
     def out_sample_train_with_tuning(frame, work_layer, fed_values, l_values, f_transform):
@@ -163,5 +165,7 @@ class FHandler(object):
             values.append(tmp)
 
         values = np.concatenate(values, axis=0)
+        prevstage = frame.depth - work_layer
+        stage = prevstage + 1
 
-        return values, dict(models)
+        return values, dict(models), stage
