@@ -51,6 +51,7 @@ class LHandler(object):
 
 class FHandler(object):
     def supervised_fit_transform(self, f_node):
+        db = f_node.pipe_init.db
         f_transform = f_node.f_transform
         frame, l_values, fed_values, prevstage = self.f_collect_components(f_node)
         work_layer = frame.depth - prevstage
@@ -69,6 +70,7 @@ class FHandler(object):
 
             # f_transform documenting
             f_transform.record_models(model_collection)
+            f_transform.set_db(db)
 
         return new_feature_values, f_transform, stage
 

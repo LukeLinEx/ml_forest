@@ -317,6 +317,7 @@ class FConnector(object):
         return all_docs
 
     def materialize_with_existing_doc(self, f_node, doc):
+        db = f_node.pipe_init.db
         frame = f_node.pipe_init.frame
         label = doc["essentials"]["label"]
         lst_fed = [f.obj_id for f in f_node.lst_fed]
@@ -333,6 +334,7 @@ class FConnector(object):
         )
         feature.stage = stage
         feature.obj_id = doc["_id"]
+        feature.set_db(db)
 
         return feature, f_transform
 
