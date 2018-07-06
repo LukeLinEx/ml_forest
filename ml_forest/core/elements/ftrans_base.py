@@ -68,7 +68,10 @@ class SklearnModel(FTransform):
                 model.set_params(**{key: self.essentials[key]})
         model.fit(x, y)
 
-        return model, model.predict(new_x)
+        if "predict_proba" in self.essentials and self.essentials["predict_proba"]:
+            return model, model.predict_proba(new_x)
+        else:
+            return model, model.predict(new_x)
 
     def transform_singleton(self, model, new_x):
         if "predict_proba" in self.essentials and self.essentials["predict_proba"]:

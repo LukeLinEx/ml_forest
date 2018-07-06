@@ -30,6 +30,10 @@ class PipeInit(Base):
             raise TypeError("The data for initializing a pipe should be of the type pandas.DataFrame")
         if col_y not in data:
             raise KeyError("The column name of the target: col_y provided is not in the data")
+        if col_selected:
+            for key in col_selected:
+                if not isinstance(col_selected[key], list) :
+                    raise TypeError("All the values in the dictionary col_selected have to be lists.")
 
         super(PipeInit, self).__init__()
         self.__essentials = {}

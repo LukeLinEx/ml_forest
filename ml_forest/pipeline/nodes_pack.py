@@ -61,7 +61,7 @@ class LConnector(object):
                     l_node.filepaths = doc["filepaths"]
 
                 elif save_obtained:
-                    label, l_transform = self.materialize_with_existing_doc(l_node=l_node, doc=doc)
+                    label, l_transform = self.materialize_with_existing_doc(doc=doc, l_node=l_node)
 
                     # save obtained
                     l_transform.save_file(filepaths)
@@ -110,18 +110,10 @@ class LConnector(object):
 
                 # update l_node
                 if l_node.filepaths is None:
-                    l_node.filepaths = filepaths
-
-                # for return
-                ih = IOHandler()
-                label = ih.load_obj_from_file(l_node.obj_id, "Label", doc_filepaths)
-                l_transform = ih.load_obj_from_file(doc["essentials"]["l_transform"], "LTransform", doc_filepaths)
-
-                # for return
-                label_obtained, l_trans_obtained = label, l_transform
+                    l_node.filepaths = doc_filepaths
 
             elif save_obtained:
-                label, l_transform = self.materialize_with_existing_doc(l_node=l_node, doc=doc)
+                label, l_transform = self.materialize_with_existing_doc(doc=doc, l_node=l_node)
 
                 # save obtained
                 label.save_file(filepaths)
@@ -134,7 +126,7 @@ class LConnector(object):
                 label_obtained, l_trans_obtained = label, l_transform
 
             else:
-                label, l_transform = self.materialize_with_existing_doc(l_node=l_node, doc=doc)
+                label, l_transform = self.materialize_with_existing_doc(doc=doc, l_node=l_node)
 
                 # for return
                 label_obtained, l_trans_obtained = label, l_transform
@@ -142,6 +134,15 @@ class LConnector(object):
         return label_obtained, l_trans_obtained
 
     def materialize_with_existing_doc(self, doc, l_node):
+        """
+        From the document we found, recover the Label and the LTransform object.
+        This should be used when a record is found in the db but the object itself is not saved
+
+        :param doc:
+        :param l_node:
+        :return:
+        """
+        db = l_node.pipe_init.db
         frame = l_node.pipe_init.frame
         lab_fed = l_node.lab_fed.obj_id
         l_trans_id = doc["essentials"]["l_transform"]
@@ -150,14 +151,25 @@ class LConnector(object):
         l_values, l_transform = mp.flow_to(l_node)
 
         l_transform.obj_id = l_trans_id
+        l_transform.set_db(db)
         self.matched.append(l_trans_id)
 
         label = Label(frame=frame, l_transform=l_transform.obj_id, raw_y=lab_fed, values=l_values)
+        label.set_db(db)
         label.obj_id = doc["_id"]
 
         return label, l_transform
 
     def set_off_and_record(self, l_node, db):
+        """
+        Build the obect according to the "DNA" in l_node.
+        This should be used when no record of the target object is found from the db
+
+        :param l_node:
+        :param db:
+        :return:
+        """
+
         frame = l_node.pipe_init.frame
         lab_fed = l_node.lab_fed.obj_id
 
@@ -317,6 +329,12 @@ class FConnector(object):
         return all_docs
 
     def materialize_with_existing_doc(self, f_node, doc):
+        """
+
+        :param f_node:
+        :param doc:
+        :return:
+        """
         db = f_node.pipe_init.db
         frame = f_node.pipe_init.frame
         label = doc["essentials"]["label"]
@@ -327,6 +345,7 @@ class FConnector(object):
         f_values, f_transform, stage = mp.flow_to(f_node)
 
         f_transform.obj_id = f_trans_id
+        f_transform.set_db(db)
         self.matched.append(f_trans_id)
 
         feature = Feature(

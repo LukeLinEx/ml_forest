@@ -41,7 +41,7 @@ class LHandler(object):
             obj_id=l_node.pipe_init.frame, element="Frame", filepaths=l_node.pipe_init.filepaths
         )
 
-        lab_fed = frame = ih.load_obj_from_file(
+        lab_fed = ih.load_obj_from_file(
             obj_id=l_node.lab_fed.obj_id, element="Label", filepaths=l_node.pipe_init.filepaths
         )
         lab_fed = lab_fed.values
@@ -51,7 +51,6 @@ class LHandler(object):
 
 class FHandler(object):
     def supervised_fit_transform(self, f_node):
-        db = f_node.pipe_init.db
         f_transform = f_node.f_transform
         frame, l_values, fed_values, prevstage = self.f_collect_components(f_node)
         work_layer = frame.depth - prevstage
@@ -70,7 +69,6 @@ class FHandler(object):
 
             # f_transform documenting
             f_transform.record_models(model_collection)
-            f_transform.set_db(db)
 
         return new_feature_values, f_transform, stage
 
@@ -157,7 +155,7 @@ class FHandler(object):
             x_train = fed_values[train_idx, :]
             y_train = l_values[train_idx, :]
             x_validation = fed_values[validation_idx, :]
-            y_validation = fed_values[validation_idx, :]
+            y_validation = l_values[validation_idx, :]
             x_test = fed_values[test_idx, :]
 
             model, tmp = f_transform.fit_singleton(x_train, y_train, x_validation, y_validation, x_test)
