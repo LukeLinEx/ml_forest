@@ -1,7 +1,6 @@
 from ml_forest.core.elements.feature_base import Feature
 from ml_forest.core.elements.label_base import Label
 from ml_forest.core.constructions.db_handler import DbHandler
-from ml_forest.core.constructions.io_handler import IOHandler
 from ml_forest.core.constructions.mini_pipe import MiniPipe
 
 from ml_forest.pipeline.stacking_node import FNode, LNode
@@ -287,12 +286,13 @@ class FConnector(object):
                 if f_node.filepaths is None:
                     f_node.filepaths = filepaths
 
-                ih = IOHandler()
-                feature = ih.load_obj_from_file(f_node.obj_id, "Feature", doc_filepaths)
-                f_transform = ih.load_obj_from_file(doc["essentials"]["f_transform"], "FTransform", doc_filepaths)
-
-                # for return
-                feature_obtained, f_trans_obtained = feature, f_transform
+                # TODO: we should probably remove this part since nothing is "obtained" here
+                # ih = IOHandler()
+                # feature = ih.load_obj_from_file(f_node.obj_id, "Feature", doc_filepaths)
+                # f_transform = ih.load_obj_from_file(doc["essentials"]["f_transform"], "FTransform", doc_filepaths)
+                #
+                # # for return
+                # feature_obtained, f_trans_obtained = feature, f_transform
 
             elif save_obtained:
                 feature, f_transform = self.materialize_with_existing_doc(f_node=f_node, doc=doc)
