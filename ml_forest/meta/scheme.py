@@ -6,7 +6,7 @@ from ml_forest.core.elements.identity import Base
 from ml_forest.core.constructions.db_handler import DbHandler
 from ml_forest.core.constructions.io_handler import IOHandler
 
-from ml_forest.pipeline.stacking_node import FNode, LNode
+from ml_forest.pipeline.nodes.stacking_node import FNode
 from ml_forest.pipeline.nodes_pack import Connector
 
 
