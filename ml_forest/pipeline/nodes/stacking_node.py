@@ -23,6 +23,8 @@ class StackingNode(object):
     def obj_id(self, _id):
         if not bool(self.obj_id):
             self.__obj_id = _id
+        elif _id == self.obj_id:
+            pass
         else:
             raise TypeError("Why do you need to update obj_id of a node?")
 
@@ -35,7 +37,7 @@ class StackingNode(object):
         if not bool(self.filepaths):
             self.__filepaths = _paths
         else:
-            raise TypeError("why do you need to update filepaths of a node?")
+            raise TypeError("This method is not designed to update filepaths.")
 
     def fetch(self):
         if self.obj_id is None or self.filepaths is None:
