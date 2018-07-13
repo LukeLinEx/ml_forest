@@ -71,7 +71,8 @@ class Base(object):
 
     @obj_id.setter
     def obj_id(self, val):
-        assert not bool(self.obj_id), "The obj_id cannot be reset."
+        if self.obj_id:
+            raise AttributeError("The obj_id cannot be reset.")
         self.__obj_id = val
 
     @property
