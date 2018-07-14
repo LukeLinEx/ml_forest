@@ -1,8 +1,13 @@
 import numpy as np
 
+from ml_forest.core.elements.frame_base import Frame
+from ml_forest.core.elements.label_base import Label
+from ml_forest.core.elements.ltrans_base import LTransform
+
+
 from ml_forest.core.constructions.io_handler import IOHandler
 
-from ml_forest.pipeline.stacking_node import FNode, LNode
+
 
 
 class MiniPipe(object):
@@ -17,42 +22,35 @@ class MiniPipe(object):
                 f_values, f_transform = fh.unsupervised_fit_transform(node)
                 return f_values, f_transform
 
-        elif isinstance(node, LNode):
-            lh = LHandler()
-            l_values, l_transform = lh.label_encoding_transform(node)
-            return l_values, l_transform
 
+class LFlow(object):
+    def label_encoding_transform(self, frame, lab_fed, l_transform):
+        """
 
-class LHandler(object):
-    def label_encoding_transform(self, l_node):
-        if not isinstance(l_node, LNode):
-            raise TypeError("LHandler can only handle a LNode")
-
-        l_transform = l_node.l_transform
-        frame, lab_fed = self.l_collect_components(l_node)
-        new_label_values = l_transform.encode_whole(lab_fed)
+        :param frame: Frame object
+        :param lab_fed: Label object
+        :param l_transform: LTransform object
+        :return:
+        """
+        if not isinstance(frame, Frame) or not isinstance(lab_fed, Label) or not isinstance(l_transform, LTransform):
+            raise TypeError("Something wrong.")
+        new_label_values = l_transform.encode_whole(lab_fed.values)
 
         return new_label_values, l_transform
 
-    @staticmethod
-    def l_collect_components(l_node):
-        ih = IOHandler()
-        frame = ih.load_obj_from_file(
-            obj_id=l_node.pipe_init.frame, element="Frame", filepaths=l_node.pipe_init.filepaths
-        )
-
-        lab_fed = ih.load_obj_from_file(
-            obj_id=l_node.lab_fed.obj_id, element="Label", filepaths=l_node.pipe_init.filepaths
-        )
-        lab_fed = lab_fed.values
-
-        return frame, lab_fed
 
 
-class FHandler(object):
-    def supervised_fit_transform(self, f_node):
-        f_transform = f_node.f_transform
-        frame, l_values, fed_values, prevstage = self.f_collect_components(f_node)
+class FFlow(object):
+    def supervised_fit_transform(self, frame, lst_fed, f_transform, label):
+        """
+
+        :param frame:
+        :param lst_fed:
+        :param f_transform:
+        :param label:
+        :return:
+        """
+        l_values, fed_values, prevstage = self.f_collect_components(lst_fed, label)
         work_layer = frame.depth - prevstage
 
         if work_layer == 0:
@@ -72,25 +70,13 @@ class FHandler(object):
 
         return new_feature_values, f_transform, stage
 
-    def unsupervised_fit_transform(self, f_node):
+    def unsupervised_fit_transform(self, frame, lst_fed, f_transform, label):
         raise NotImplementedError("Need to implement for unsupervised learning")
 
     @staticmethod
-    def f_collect_components(f_node):
-        ih = IOHandler()
-        frame = ih.load_obj_from_file(
-            obj_id=f_node.pipe_init.frame, element="Frame", filepaths=f_node.pipe_init.filepaths
-        )
-
-        label = ih.load_obj_from_file(
-            obj_id=f_node.l_node.obj_id, element="Label", filepaths=f_node.pipe_init.filepaths
-        )
+    def f_collect_components(lst_fed, label):
         l_values = label.values
 
-        lst_fed = []
-        for f in f_node.lst_fed:
-            fed = ih.load_obj_from_file(obj_id=f.obj_id, element="Feature", filepaths=f_node.pipe_init.filepaths)
-            lst_fed.append(fed)
         if len(lst_fed) == 1:
             fed_values = lst_fed[0].values
         else:
@@ -98,7 +84,7 @@ class FHandler(object):
 
         prevstage = max(map(lambda x: x.stage, lst_fed))
 
-        return frame, l_values, fed_values, prevstage
+        return l_values, fed_values, prevstage
 
     @staticmethod
     def out_sample_train(frame, work_layer, fed_values, l_values, f_transform):

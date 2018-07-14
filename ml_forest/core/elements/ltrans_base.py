@@ -9,3 +9,6 @@ class LTransform(Base):
     @staticmethod
     def decide_element():
         return "LTransform"
+
+    def encode_whole(self, fed_y):
+        raise NotImplementedError

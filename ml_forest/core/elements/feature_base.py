@@ -78,7 +78,9 @@ class Feature(Base):
 
     @stage.setter
     def stage(self, val):
-        if self.__stage is not None:
-            raise ValueError("The method doesn't support update stage")
-        else:
+        if self.__stage is None:
             self.__stage = val
+        elif self.__stage == val:
+            pass
+        else:
+            raise ValueError("The method doesn't support update stage")
