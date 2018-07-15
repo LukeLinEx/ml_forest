@@ -7,13 +7,14 @@ from ml_forest.core.constructions.mini_pipe import FFlow, LFlow
 
 from ml_forest.pipeline.nodes.stacking_node import FNode, LNode
 
+# Connectors do not update node's obj_id nor filepaths
+
 
 class FConnector(object):
     def __init__(self, matched):
-        self.matched = matched["f"]
-        self.l_matched = matched["l"]
+        self.matched = matched
 
-    def collect_docs(self, f_node):
+    def collect_doc(self, f_node):
         if not isinstance(f_node, FNode):
             raise TypeError("The parameter f_node should of the type FNode.")
 
@@ -28,6 +29,7 @@ class FConnector(object):
             all_docs = f_node.get_docs_match_the_fnode(lst_f_transform)
             if all_docs:
                 doc = all_docs[0]
+                self.matched.append(doc["essentials"]["f_transform"])
             else:
                 doc = None
 
@@ -39,7 +41,7 @@ class FConnector(object):
         The function doesn't search db. Any searched result can be passed to the old_record parameter
 
         :param f_node:
-        :param old_record:
+        :param old_record: a document that matches the node
         :return:
         """
         if not isinstance(f_node, FNode):
@@ -55,13 +57,13 @@ class FConnector(object):
                 feature = ih.load_obj_from_file(feature_id, "Feature", filepaths)
                 f_transform = ih.load_obj_from_file(f_transform_id, "FTransform", filepaths)
             else:
-                feature, f_transform = self.materialize_with_existing_doc(f_node, old_record)
+                feature, f_transform = self.recover_with_existing_doc(f_node, old_record)
         else:
             feature, f_transform = self.create_and_record(f_node)
 
         return feature, f_transform
 
-    ### inward usage
+    # private usage
     def get_f_transform_candidates(self, f_node):
         dh = DbHandler()
         lst_transform_ids = dh.search_by_essentials(f_node.f_transform, f_node.pipe_init.db)
@@ -70,7 +72,7 @@ class FConnector(object):
         return lst_transform_ids
 
     @staticmethod
-    def materialize_with_existing_doc(f_node, doc):
+    def recover_with_existing_doc(f_node, doc):
         """
 
         :param f_node:
@@ -152,7 +154,7 @@ class LConnector(object):
     def __init__(self, matched):
         self.matched = matched
 
-    def collect_docs(self, l_node):
+    def collect_doc(self, l_node):
         if not isinstance(l_node, LNode):
             raise TypeError("The parameter l_node should be of the type LNode.")
 
@@ -167,17 +169,19 @@ class LConnector(object):
             all_docs = l_node.get_docs_match_the_lnode(lst_l_transform)
             if all_docs:
                 doc = all_docs[0]
+                self.matched.append(doc["essentials"]["l_transform"])
             else:
                 doc = None
 
         return doc
 
-    def materialize(self, l_node, old_record=None):
+    def l_materialize(self, l_node, old_record=None):
         """
         Assuming all the components in this l_node are ready. Generate the Label and the LTransform based on those.
         The function doesn't search db. Any searched result can be passed to the old_record parameter
 
         :param l_node: LNode
+        :param old_record: a document matched the node.
         :return:
         """
         if not isinstance(l_node, LNode):
@@ -193,13 +197,13 @@ class LConnector(object):
                 label = ih.load_obj_from_file(label_id, "Label", filepaths)
                 l_transform = ih.load_obj_from_file(l_transform_id, "LTransform", filepaths)
             else:
-                label, l_transform = self.materialize_with_existing_doc(l_node, old_record)
+                label, l_transform = self.recover_with_existing_doc(l_node, old_record)
         else:
             label, l_transform = self.create_and_record(l_node)
 
         return label, l_transform
 
-    ### inward usage
+    # private usage
     def get_l_transform_candidates(self, l_node):
         dh = DbHandler()
         lst_transform_ids = dh.search_by_essentials(l_node.l_transform, l_node.pipe_init.db)
@@ -207,7 +211,7 @@ class LConnector(object):
         return lst_transform_ids
 
     @staticmethod
-    def materialize_with_existing_doc(l_node, doc):
+    def recover_with_existing_doc(l_node, doc):
         """
         From the document we found, recover the Label and the LTransform object.
         This should be used when a record is found in the db but the object itself is not saved
