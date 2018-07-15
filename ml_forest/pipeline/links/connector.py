@@ -51,7 +51,7 @@ class FConnector(object):
             if old_record["filepaths"]:
                 filepaths = old_record["filepaths"]
                 feature_id = old_record["_id"]
-                f_transform_id = old_record["f_transform"]
+                f_transform_id = old_record["essentials"]["f_transform"]
 
                 ih = IOHandler()
                 feature = ih.load_obj_from_file(feature_id, "Feature", filepaths)
@@ -121,7 +121,7 @@ class FConnector(object):
         :return:
         """
         db = f_node.pipe_init.db
-        filepaths = f_node.filepaths
+        filepaths = f_node.pipe_init.filepaths
 
         frame_id = f_node.pipe_init.frame
         label_id = f_node.l_node.obj_id
@@ -147,7 +147,7 @@ class FConnector(object):
         feature.stage = stage
         feature.save_db(db)
 
-        return f_values, f_transform
+        return feature, f_transform
 
 
 class LConnector(object):
@@ -191,7 +191,7 @@ class LConnector(object):
             if old_record["filepaths"]:
                 filepaths = old_record["filepaths"]
                 label_id = old_record["_id"]
-                l_transform_id = old_record["l_transform"]
+                l_transform_id = old_record["essentials"]["l_transform"]
 
                 ih = IOHandler()
                 label = ih.load_obj_from_file(label_id, "Label", filepaths)
@@ -221,7 +221,7 @@ class LConnector(object):
         :return:
         """
         db = l_node.pipe_init.db
-        filepaths = l_node.filepaths
+        filepaths = l_node.pipe_init.filepaths
 
         frame_id = l_node.pipe_init.frame
         lab_fed_id = l_node.lab_fed.obj_id
@@ -254,7 +254,7 @@ class LConnector(object):
         :return:
         """
         db = l_node.pipe_init.db
-        filepaths = l_node.filepaths
+        filepaths = l_node.pipe_init.filepaths
 
         frame_id = l_node.pipe_init.frame
         lab_fed_id = l_node.lab_fed.obj_id

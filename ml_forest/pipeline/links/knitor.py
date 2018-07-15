@@ -16,17 +16,18 @@ class Knitor(object):
         self.lc = LConnector(matched["l"])
 
     def l_subknit(self, l_node):
-        self.l_subknit(l_node.lab_fed)
-
         if not l_node.filepaths:
+            self.l_subknit(l_node.lab_fed)
+
             doc = self.lc.collect_doc(l_node)
-            if "filepaths" in doc:
+            if doc and "filepaths" in doc:
                 obj_id = doc["_id"]
                 filepaths = doc["filepaths"]
             else:
                 filepaths = l_node.pipe_init.filepaths
 
                 label, l_transform = self.lc.l_materialize(l_node, doc)
+
                 label.save_file(filepaths)
                 l_transform.save_file(filepaths)
 
@@ -37,6 +38,8 @@ class Knitor(object):
                 l_node.obj_id = obj_id
 
     def l_knit(self, l_node):
+        self.l_subknit(l_node.lab_fed)
+
         if l_node.filepaths:
             ih = IOHandler()
             label = ih.load_obj_from_file(l_node.obj_id, "Label", l_node.filepaths)
@@ -45,7 +48,7 @@ class Knitor(object):
         else:
             doc = self.lc.collect_doc(l_node)
             label, l_transform = self.lc.l_materialize(l_node, doc)
-            if "filepaths" in doc:
+            if doc and "filepaths" in doc:
                 """"
                 Update if the obj is already saved in the filepaths.
                 Whether or not save a new created one should be decided by a higher level function
@@ -62,14 +65,14 @@ class Knitor(object):
         return label, l_transform
 
     def f_subknit(self, f_node):
-        for f in f_node.lst_fed:
-            self.f_subknit(f)
-
-        self.l_subknit(f_node.l_node)
-
         if not f_node.filepaths:
+            for f in f_node.lst_fed:
+                self.f_subknit(f)
+
+            self.l_subknit(f_node.l_node)
+
             doc = self.fc.collect_doc(f_node)
-            if "filepaths" in doc:
+            if doc and "filepaths" in doc:
                 filepaths = doc["filepaths"]
                 obj_id = doc["_id"]
             else:
@@ -86,6 +89,11 @@ class Knitor(object):
                 f_node.obj_id = obj_id
 
     def f_knit(self, f_node):
+        for f in f_node.lst_fed:
+            self.f_subknit(f)
+
+        self.l_subknit(f_node.l_node)
+
         if f_node.filepaths:
             ih = IOHandler()
             feature = ih.load_obj_from_file(f_node.obj_id, "Feature", f_node.filepaths)
@@ -94,7 +102,7 @@ class Knitor(object):
         else:
             doc = self.fc.collect_doc(f_node)
             feature, f_transform = self.fc.f_materialize(f_node, doc)
-            if "filepaths" in doc:
+            if doc and "filepaths" in doc:
                 """
                 Update if the obj is already saved in the filepaths.
                 Whether or not save a new created one should be decided by a higher level function
