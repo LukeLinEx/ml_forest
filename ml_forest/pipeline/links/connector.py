@@ -29,9 +29,11 @@ class FConnector(object):
             all_docs = f_node.get_docs_match_the_fnode(lst_f_transform)
             if all_docs:
                 doc = all_docs[0]
-                self.matched.append(doc["essentials"]["f_transform"])
             else:
                 doc = None
+
+        if doc:
+            self.matched.append(doc["essentials"]["f_transform"])
 
         return doc
 
@@ -169,9 +171,11 @@ class LConnector(object):
             all_docs = l_node.get_docs_match_the_lnode(lst_l_transform)
             if all_docs:
                 doc = all_docs[0]
-                self.matched.append(doc["essentials"]["l_transform"])
             else:
                 doc = None
+
+        if doc:
+            self.matched.append(doc["essentials"]["l_transform"])
 
         return doc
 

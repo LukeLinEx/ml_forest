@@ -17,7 +17,8 @@ class Knitor(object):
 
     def l_subknit(self, l_node):
         if not l_node.filepaths:
-            self.l_subknit(l_node.lab_fed)
+            if hasattr(l_node, "lab_fed"):
+                self.l_subknit(l_node.lab_fed)
 
             doc = self.lc.collect_doc(l_node)
             if doc and "filepaths" in doc:
@@ -38,7 +39,8 @@ class Knitor(object):
                 l_node.obj_id = obj_id
 
     def l_knit(self, l_node):
-        self.l_subknit(l_node.lab_fed)
+        if hasattr(l_node, "lab_fed"):
+            self.l_subknit(l_node.lab_fed)
 
         if l_node.filepaths:
             ih = IOHandler()
@@ -66,10 +68,11 @@ class Knitor(object):
 
     def f_subknit(self, f_node):
         if not f_node.filepaths:
-            for f in f_node.lst_fed:
-                self.f_subknit(f)
-
-            self.l_subknit(f_node.l_node)
+            if hasattr(f_node, "lst_fed"):
+                for f in f_node.lst_fed:
+                    self.f_subknit(f)
+            if hasattr(f_node, "l_node"):
+                self.l_subknit(f_node.l_node)
 
             doc = self.fc.collect_doc(f_node)
             if doc and "filepaths" in doc:
@@ -89,10 +92,11 @@ class Knitor(object):
                 f_node.obj_id = obj_id
 
     def f_knit(self, f_node):
-        for f in f_node.lst_fed:
-            self.f_subknit(f)
-
-        self.l_subknit(f_node.l_node)
+        if hasattr(f_node, "lst_fed"):
+            for f in f_node.lst_fed:
+                self.f_subknit(f)
+        if hasattr(f_node, "l_node"):
+            self.l_subknit(f_node.l_node)
 
         if f_node.filepaths:
             ih = IOHandler()
