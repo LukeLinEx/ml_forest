@@ -83,6 +83,11 @@ class FNode(StackingNode):
                 self.filepaths = filepaths
             if lst_fed or f_transform or l_node:
                 warn("Because obj_id is provided, it's used. The other parameters are ignored.")
+            pipe_init, _, _, _ = self.__inspect_doc(pipe_init, lst_fed, f_transform, l_node)
+            self._pipe_init = pipe_init
+            self.lst_fed = None
+            self.f_transform = None
+            self.l_node = None
         else:
             # TODO: assert non-missing conditions (low priority)
             pipe_init, lst_fed, f_transform, l_node = self.__inspect_doc(pipe_init, lst_fed, f_transform, l_node)
@@ -149,6 +154,10 @@ class LNode(StackingNode):
                 self.filepaths = filepaths
             if pipe_init or lab_fed or l_transform:
                 warn("Because obj_id is provided, it's used. The other parameters are ignored.")
+            pipe_init, _, _ = self.__inspect_doc(pipe_init, lab_fed, l_transform)
+            self._pipe_init = pipe_init
+            self.lab_fed = None
+            self.l_transform = None
         else:
             # TODO: assert non-missing conditions (low priority)
             pipe_init, lab_fed, l_transform = self.__inspect_doc(pipe_init, lab_fed, l_transform)
