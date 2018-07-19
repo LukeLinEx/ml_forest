@@ -7,7 +7,7 @@ from ml_forest.core.elements.ltrans_base import LTransform
 from ml_forest.core.constructions.db_handler import DbHandler
 from ml_forest.core.constructions.io_handler import IOHandler
 
-from ml_forest.pipeline.pipe_init import PipeInit
+from ml_forest.core.constructions.core_init import CoreInit
 
 
 class StackingNode(object):
@@ -47,7 +47,7 @@ class StackingNode(object):
 
         obj_id = self.obj_id
         element = self.decide_element()
-        filepaths = self.pipe_init.filepaths
+        filepaths = self.core.filepaths
 
         ih = IOHandler()
         obj_fetched = ih.load_obj_from_file(obj_id, element, filepaths)
@@ -59,15 +59,15 @@ class StackingNode(object):
         raise NotImplementedError
 
     @property
-    def pipe_init(self):
+    def core(self):
         raise NotImplementedError
 
 
 class FNode(StackingNode):
-    def __init__(self, pipe_init, lst_fed=None, f_transform=None, l_node=None, obj_id=None, filepaths=None):
+    def __init__(self, core, lst_fed=None, f_transform=None, l_node=None, obj_id=None, filepaths=None):
         """
 
-        :param pipe_init: PipeInit
+        :param core: CoreInit
         :param lst_fed:  a list of FNode or None
         :param f_transform: FTransform or None
         :param l_node: LNode or None
@@ -83,22 +83,22 @@ class FNode(StackingNode):
                 self.filepaths = filepaths
             if lst_fed or f_transform or l_node:
                 warn("Because obj_id is provided, it's used. The other parameters are ignored.")
-            pipe_init, _, _, _ = self.__inspect_doc(pipe_init, lst_fed, f_transform, l_node)
-            self._pipe_init = pipe_init
+            core, _, _, _ = self.__inspect_doc(core, lst_fed, f_transform, l_node)
+            self._core = core
             self.lst_fed = None
             self.f_transform = None
             self.l_node = None
         else:
             # TODO: assert non-missing conditions (low priority)
-            pipe_init, lst_fed, f_transform, l_node = self.__inspect_doc(pipe_init, lst_fed, f_transform, l_node)
-            self._pipe_init = pipe_init
+            core, lst_fed, f_transform, l_node = self.__inspect_doc(core, lst_fed, f_transform, l_node)
+            self._core = core
             self.lst_fed = lst_fed
             self.f_transform = f_transform
             self.l_node = l_node
 
-    def __inspect_doc(self, pipe_init, lst_fed, f_transform, l_node):
-        if not isinstance(pipe_init, PipeInit):
-            raise TypeError("The parameter pipe_init should be of the type ml_forest.pipe_init.PipeInit")
+    def __inspect_doc(self, core, lst_fed, f_transform, l_node):
+        if not isinstance(core, CoreInit):
+            raise TypeError("The parameter core should be of the type ml_forest.core.constructions.CoreInit")
 
         if lst_fed:
             for fed in lst_fed:
@@ -111,17 +111,17 @@ class FNode(StackingNode):
         if l_node and not isinstance(l_node, LNode):
             raise TypeError("The parameter l_node should be of the type LNode")
 
-        return pipe_init, lst_fed, f_transform, l_node
+        return core, lst_fed, f_transform, l_node
 
     def get_docs_match_the_fnode(self, lst_f_transform):
-        frame = self.pipe_init.frame
+        frame = self.core.frame
         lst_fed = [f.obj_id for f in self.lst_fed]
 
         dh = DbHandler()
         all_docs = []
         for f_tran in lst_f_transform:
             tmp = Feature(frame=frame, f_transform=f_tran, lst_fed=lst_fed, label=self.l_node.obj_id, values=None)
-            all_docs.extend(dh.search_by_essentials(tmp, self.pipe_init.db))
+            all_docs.extend(dh.search_by_essentials(tmp, self.core.db))
         all_docs = sorted(all_docs, key=lambda d: not bool(d["filepaths"]))
 
         return all_docs
@@ -131,15 +131,15 @@ class FNode(StackingNode):
         return "Feature"
 
     @property
-    def pipe_init(self):
-        return self._pipe_init
+    def core(self):
+        return self._core
 
 
 class LNode(StackingNode):
-    def __init__(self, pipe_init, lab_fed=None, l_transform=None, obj_id=None, filepaths=None):
+    def __init__(self, core, lab_fed=None, l_transform=None, obj_id=None, filepaths=None):
         """
 
-        :param pipe_init:
+        :param core:
         :param lab_fed:
         :param l_transform:
         :param obj_id:
@@ -152,22 +152,22 @@ class LNode(StackingNode):
             self.obj_id = obj_id
             if filepaths:
                 self.filepaths = filepaths
-            if pipe_init or lab_fed or l_transform:
+            if core or lab_fed or l_transform:
                 warn("Because obj_id is provided, it's used. The other parameters are ignored.")
-            pipe_init, _, _ = self.__inspect_doc(pipe_init, lab_fed, l_transform)
-            self._pipe_init = pipe_init
+            core, _, _ = self.__inspect_doc(core, lab_fed, l_transform)
+            self._core = core
             self.lab_fed = None
             self.l_transform = None
         else:
             # TODO: assert non-missing conditions (low priority)
-            pipe_init, lab_fed, l_transform = self.__inspect_doc(pipe_init, lab_fed, l_transform)
-            self._pipe_init = pipe_init
+            core, lab_fed, l_transform = self.__inspect_doc(core, lab_fed, l_transform)
+            self._core = core
             self.lab_fed = lab_fed
             self.l_transform = l_transform
 
-    def __inspect_doc(self, pipe_init, lab_fed, l_transform):
-        if not isinstance(pipe_init, PipeInit):
-            raise TypeError("The parameter pipe_init should be of the type ml_forest.pipe_init.PipeInit")
+    def __inspect_doc(self, core, lab_fed, l_transform):
+        if not isinstance(core, CoreInit):
+            raise TypeError("The parameter core should be of the type ml_forest.core.constructions.CoreInit")
 
         if lab_fed and not isinstance(lab_fed, LNode):
             raise TypeError("Every element in the parameter lab_fed should be a LNode")
@@ -175,17 +175,17 @@ class LNode(StackingNode):
         if l_transform and not isinstance(l_transform, LTransform):
             raise TypeError("The paramenter l_transform should be of the type LTransform")
 
-        return pipe_init, lab_fed, l_transform
+        return core, lab_fed, l_transform
 
     def get_docs_match_the_lnode(self, lst_l_transform):
-        frame = self.pipe_init.frame
+        frame = self.core.frame
         lab_fed = self.lab_fed.obj_id
 
         dh = DbHandler()
         all_docs = []
         for l_tran in lst_l_transform:
             tmp = Label(frame=frame, l_transform=l_tran, raw_y=lab_fed, values=None)
-            all_docs.extend(dh.search_by_essentials(tmp, self.pipe_init.db))
+            all_docs.extend(dh.search_by_essentials(tmp, self.core.db))
         all_docs = sorted(all_docs, key=lambda d: not bool(d["filepaths"]))
 
         return all_docs
@@ -195,5 +195,5 @@ class LNode(StackingNode):
         return "Label"
 
     @property
-    def pipe_init(self):
-        return self._pipe_init
+    def core(self):
+        return self._core

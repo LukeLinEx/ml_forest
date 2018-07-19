@@ -20,7 +20,7 @@ class FConnector(object):
 
         if f_node.obj_id:
             obj_id = f_node.obj_id
-            db = f_node.pipe_init.db
+            db = f_node.core.db
 
             dh = DbHandler()
             doc = dh.search_by_obj_id(obj_id, "Feature", db)
@@ -68,7 +68,7 @@ class FConnector(object):
     # private usage
     def get_f_transform_candidates(self, f_node):
         dh = DbHandler()
-        lst_transform_ids = dh.search_by_essentials(f_node.f_transform, f_node.pipe_init.db)
+        lst_transform_ids = dh.search_by_essentials(f_node.f_transform, f_node.core.db)
         lst_transform_ids = [x["_id"]for x in lst_transform_ids if x["_id"] not in self.matched]
 
         return lst_transform_ids
@@ -81,10 +81,10 @@ class FConnector(object):
         :param doc:
         :return:
         """
-        db = f_node.pipe_init.db
-        filepaths = f_node.pipe_init.filepaths
+        db = f_node.core.db
+        filepaths = f_node.core.filepaths
 
-        frame_id = f_node.pipe_init.frame
+        frame_id = f_node.core.frame
         label_id = doc["essentials"]["label"]
         lst_fed_id = [f.obj_id for f in f_node.lst_fed]
         f_transform_id = doc["essentials"]["f_transform"]
@@ -122,10 +122,10 @@ class FConnector(object):
         :param f_node:
         :return:
         """
-        db = f_node.pipe_init.db
-        filepaths = f_node.pipe_init.filepaths
+        db = f_node.core.db
+        filepaths = f_node.core.filepaths
 
-        frame_id = f_node.pipe_init.frame
+        frame_id = f_node.core.frame
         label_id = f_node.l_node.obj_id
         lst_fed_id = [f.obj_id for f in f_node.lst_fed]
 
@@ -162,7 +162,7 @@ class LConnector(object):
 
         if l_node.obj_id:
             obj_id = l_node.obj_id
-            db = l_node.pipe_init.db
+            db = l_node.core.db
 
             dh = DbHandler()
             doc = dh.search_by_obj_id(obj_id, "Label", db)
@@ -210,7 +210,7 @@ class LConnector(object):
     # private usage
     def get_l_transform_candidates(self, l_node):
         dh = DbHandler()
-        lst_transform_ids = dh.search_by_essentials(l_node.l_transform, l_node.pipe_init.db)
+        lst_transform_ids = dh.search_by_essentials(l_node.l_transform, l_node.core.db)
         lst_transform_ids = [x["_id"]for x in lst_transform_ids if x["_id"] not in self.matched]
         return lst_transform_ids
 
@@ -224,10 +224,10 @@ class LConnector(object):
         :param l_node:
         :return:
         """
-        db = l_node.pipe_init.db
-        filepaths = l_node.pipe_init.filepaths
+        db = l_node.core.db
+        filepaths = l_node.core.filepaths
 
-        frame_id = l_node.pipe_init.frame
+        frame_id = l_node.core.frame
         lab_fed_id = l_node.lab_fed.obj_id
         l_transform_id = doc["essentials"]["l_transform"]
 
@@ -257,10 +257,10 @@ class LConnector(object):
         :param l_node:
         :return:
         """
-        db = l_node.pipe_init.db
-        filepaths = l_node.pipe_init.filepaths
+        db = l_node.core.db
+        filepaths = l_node.core.filepaths
 
-        frame_id = l_node.pipe_init.frame
+        frame_id = l_node.core.frame
         lab_fed_id = l_node.lab_fed.obj_id
 
         ih = IOHandler()

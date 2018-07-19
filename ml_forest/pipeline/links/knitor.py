@@ -25,7 +25,7 @@ class Knitor(object):
                 obj_id = doc["_id"]
                 filepaths = doc["filepaths"]
             else:
-                filepaths = l_node.pipe_init.filepaths
+                filepaths = l_node.core.filepaths
 
                 label, l_transform = self.lc.l_materialize(l_node, doc)
 
@@ -79,7 +79,7 @@ class Knitor(object):
                 filepaths = doc["filepaths"]
                 obj_id = doc["_id"]
             else:
-                filepaths = f_node.pipe_init.filepaths
+                filepaths = f_node.core.filepaths
 
                 feature, f_transform = self.fc.f_materialize(f_node, doc)
                 feature.save_file(filepaths)
