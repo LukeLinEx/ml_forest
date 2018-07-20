@@ -41,8 +41,8 @@ class StackingNode(object):
 
     def fetch(self):
         if self.obj_id is None or self.filepaths is None:
-            msg = "The node doesn't have obj_id yet. The function is designed to fetch an obj whose location is " +\
-                  "specified in a node."
+            msg = "The node doesn't have obj_id or filepaths yet. The function is designed to fetch an obj whose" +\
+                  "location is specified in a node."
             raise ValueError(msg)
 
         obj_id = self.obj_id

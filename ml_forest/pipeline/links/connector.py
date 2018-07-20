@@ -99,7 +99,7 @@ class FConnector(object):
         if f_transform.rise == 1:
             f_values, f_transform, stage = ff.supervised_fit_transform(frame, lst_fed, f_transform, label)
         else:
-            f_values, f_transform, stage = ff.unsupervised_fit_transform(frame, lst_fed, f_transform, label)
+            f_values, f_transform, stage = ff.unsupervised_fit_transform(lst_fed, f_transform)
 
         f_transform.obj_id = f_transform_id
         f_transform.set_db(db)
@@ -139,7 +139,7 @@ class FConnector(object):
         if f_transform.rise == 1:
             f_values, f_transform, stage = ff.supervised_fit_transform(frame, lst_fed, f_transform, label)
         else:
-            f_values, f_transform, stage = ff.unsupervised_fit_transform(frame, lst_fed, f_transform, label)
+            f_values, f_transform, stage = ff.unsupervised_fit_transform(lst_fed, f_transform)
 
         f_transform.save_db(db)
 
