@@ -10,17 +10,17 @@ from ml_forest.core.constructions.io_handler import IOHandler
 
 
 
-class MiniPipe(object):
-    def flow_to(self, node):
-        if isinstance(node, FNode):
-            if node.f_transform.rise == 1:
-                fh = FHandler()
-                f_values, f_transform, stage = fh.supervised_fit_transform(node)
-                return f_values, f_transform, stage
-            else:
-                fh = FHandler()
-                f_values, f_transform = fh.unsupervised_fit_transform(node)
-                return f_values, f_transform
+# class MiniPipe(object):
+#     def flow_to(self, node):
+#         if isinstance(node, FNode):
+#             if node.f_transform.rise == 1:
+#                 fh = FHandler()
+#                 f_values, f_transform, stage = fh.supervised_fit_transform(node)
+#                 return f_values, f_transform, stage
+#             else:
+#                 fh = FHandler()
+#                 f_values, f_transform = fh.unsupervised_fit_transform(node)
+#                 return f_values, f_transform
 
 
 class LFlow(object):
@@ -70,12 +70,22 @@ class FFlow(object):
 
         return new_feature_values, f_transform, stage
 
-    def unsupervised_fit_transform(self, frame, lst_fed, f_transform, label):
-        raise NotImplementedError("Need to implement for unsupervised learning")
+    def unsupervised_fit_transform(self, lst_fed, f_transform):
+        l_values, fed_values, prevstage = self.f_collect_components(lst_fed, None)
+        new_feature_values, model_collection = self.in_sample_train(fed_values, f_transform)
+        stage = prevstage
+
+        # f_transform documenting
+        f_transform.record_models(model_collection)
+
+        return new_feature_values, f_transform, stage
 
     @staticmethod
     def f_collect_components(lst_fed, label):
-        l_values = label.values
+        if label:
+            l_values = label.values
+        else:
+            l_values = None
 
         if len(lst_fed) == 1:
             fed_values = lst_fed[0].values
@@ -85,6 +95,12 @@ class FFlow(object):
         prevstage = max(map(lambda x: x.stage, lst_fed))
 
         return l_values, fed_values, prevstage
+
+    def in_sample_train(self, fed, f_transform):
+        model, values = f_transform.fit_whole(fed)
+        models = {(0,): model}
+
+        return values, models
 
     @staticmethod
     def out_sample_train(frame, work_layer, fed_values, l_values, f_transform):
@@ -113,7 +129,7 @@ class FFlow(object):
 
         values = np.concatenate(values, axis=0)
         prevstage = frame.depth - work_layer
-        stage = prevstage + 1
+        stage = prevstage + 1 # TODO: should probably change to f_transform.rise
 
         return values, dict(models), stage
 
