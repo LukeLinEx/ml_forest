@@ -16,12 +16,13 @@ class Knitor(object):
         self.lc = LConnector(matched["l"])
 
     def l_subknit(self, l_node):
+        # TODO: need to prevent subnitting fitted l_transform somehow
         if not l_node.filepaths:
             if l_node.lab_fed:
                 self.l_subknit(l_node.lab_fed)
 
             doc = self.lc.collect_doc(l_node)
-            if doc and "filepaths" in doc:
+            if doc and "filepaths" in doc and doc["filepaths"]:
                 obj_id = doc["_id"]
                 filepaths = doc["filepaths"]
             else:
@@ -39,6 +40,7 @@ class Knitor(object):
                 l_node.obj_id = obj_id
 
     def l_knit(self, l_node):
+        # TODO: need to prevent knitting fitted l_transform somehow
         if l_node.lab_fed:
             self.l_subknit(l_node.lab_fed)
 
@@ -67,6 +69,8 @@ class Knitor(object):
         return label, l_transform
 
     def f_subknit(self, f_node):
+        self.fnode_has_empty_ftransform(f_node)
+
         if not f_node.filepaths:
             if f_node.lst_fed:
                 for f in f_node.lst_fed:
@@ -75,7 +79,7 @@ class Knitor(object):
                 self.l_subknit(f_node.l_node)
 
             doc = self.fc.collect_doc(f_node)
-            if doc and "filepaths" in doc:
+            if doc and "filepaths" in doc and doc["filepaths"]:
                 filepaths = doc["filepaths"]
                 obj_id = doc["_id"]
             else:
@@ -92,6 +96,8 @@ class Knitor(object):
                 f_node.obj_id = obj_id
 
     def f_knit(self, f_node):
+        self.fnode_has_empty_ftransform(f_node)
+
         if f_node.lst_fed:
             for f in f_node.lst_fed:
                 self.f_subknit(f)
@@ -121,3 +127,20 @@ class Knitor(object):
                 f_node.obj_id = obj_id
 
         return feature, f_transform
+
+    @staticmethod
+    def fnode_has_empty_ftransform(f_node):
+        """
+        A Knitor object update a f_transform (the models attribute, in particular)or a in the node through
+        the knitting process. This function inspect if the f_transform can be updated (in particular, check
+        if the models attribute is still empty).
+
+        :param f_node: stacking_nodes.FNode
+        :return:
+        """
+        if f_node.f_transform and f_node.f_transform.models is not None:
+            msg = "Currently Knitor can only knit an empty f_transform. The f_transform in the f_node you passed " +\
+                  "has been fit already. There should be a pair of Feature and FTransform objects you got when you " +\
+                  "last knitted this node, which usually give you everything you need. Or you can create a new " +\
+                  "node with an empty f_transform."
+            raise ValueError(msg)
