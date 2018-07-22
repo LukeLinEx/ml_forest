@@ -1,22 +1,24 @@
-import pandas as pd
+import os
 from bson.objectid import ObjectId
 from ml_forest.pipeline.pipe_init import PipeInit
 
+home = os.path.expanduser("~")
 bucket = "mltests3mongo"
-home_path = "../local_storage"
+home_path = home + "/Desktop/test_ml_forest/experiment/local_storage"
 project = "housing_price"
 
 db = {"host":bucket, "project":project}
 filepaths = [{"home": home_path, "project":project}]
 
-pipe_id = ObjectId("5b524536a4870b22c7ec4726")
+
+# TODO: the test actually depends on PipeInit, should take it into account as well.
+pipe_id = ObjectId("5b54ef67b6492933d34f7ed8")
 pipe_init = PipeInit(pipe_id=pipe_id, filepaths=filepaths)
 core_docs = pipe_init.core
 init_fnodes = pipe_init.init_fnodes
 init_lnode = pipe_init.init_lnode
 
 
-import os
 import unittest
 
 key = 'LandContour'
