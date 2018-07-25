@@ -7,6 +7,7 @@ from ml_forest.pipeline.nodes.stacking_node import FNode, LNode
 
 # TODO: need a much better way to inspect input
 
+
 class PipeInit(object):
     def __init__(self, data=None, col_y=None, lst_layers=None, shuffle=False, stratified=False, col_selected=None,
                  tag=None, db=None, filepaths=None, pipe_id=None):

@@ -32,7 +32,7 @@ class FConnector(object):
             else:
                 doc = None
 
-        if doc:
+        if doc and doc["essentials"]["f_transform"]:
             self.matched.append(doc["essentials"]["f_transform"])
 
         return doc
@@ -174,7 +174,7 @@ class LConnector(object):
             else:
                 doc = None
 
-        if doc:
+        if doc and doc["essentials"]["l_transform"]:
             self.matched.append(doc["essentials"]["l_transform"])
 
         return doc
