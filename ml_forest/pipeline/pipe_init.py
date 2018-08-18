@@ -12,6 +12,10 @@ class PipeInit(object):
     def __init__(self, data=None, col_y=None, lst_layers=None, shuffle=False, stratified=False, col_selected=None,
                  tag=None, db=None, filepaths=None, pipe_id=None):
         """
+        The difference between PipeInit and ml_forest.core.constructions.core_init.CoreInit is that
+            - PipeInit has initiating Nodes
+            - CoreInit has initiating Features/Labels obj_id
+        
         :param data: pandas.DataFrame. This needs to be a pandas data frame with a label column
         :param col_y: The name of the label column
         :param lst_layers: list. This gives the "lst_layers" to the Frame
