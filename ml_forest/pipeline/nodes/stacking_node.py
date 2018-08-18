@@ -79,8 +79,7 @@ class FNode(StackingNode):
 
         if obj_id:
             self.obj_id = obj_id
-            if filepaths:
-                self.filepaths = filepaths
+            self.filepaths = filepaths
             if lst_fed or f_transform or l_node:
                 warn("Because obj_id is provided, it's used. The other parameters are ignored.")
             core, _, _, _ = self.__inspect_doc(core, lst_fed, f_transform, l_node)
