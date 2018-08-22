@@ -73,6 +73,7 @@ class SklearnModel(FTransform):
         else:
             return model, model.predict(new_x)
 
+    # TODO: transform should be enough, transform_singleton doesn't make sense ... there should be no folding for test_data
     def transform_singleton(self, model, new_x):
         if "predict_proba" in self.essentials and self.essentials["predict_proba"]:
             return model.predict_proba(new_x)

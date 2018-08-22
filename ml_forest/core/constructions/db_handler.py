@@ -117,6 +117,34 @@ class DbHandler(object):
 
         target_db.update_one({"_id": obj.obj_id}, qry, upsert=True)
 
+    @staticmethod
+    def insert_subdoc(obj, field, subdoc):
+        if not isinstance(subdoc, dict):
+            raise TypeError("The new updating query should be encoded into a dictionary.")
+        if not obj.obj_id:
+            raise AttributeError("The obj passed has no obj_id attribute, can't find the document.")
+
+        try:
+            db_location = obj.db
+        except AttributeError:
+            raise AttributeError("The obj passed has no db attribute, can't find the location of the document.")
+
+        try:
+            element = obj.decide_element()
+        except AttributeError:
+            msg = "The object passed has no decide_element method. Is this object originally designed to be tracked?"
+            raise AttributeError(msg)
+
+        if not isinstance(field, str):
+            raise ValueError("A field has to be a string")
+
+        target_db = connect_collection(db_location["host"], db_location["project"], element)
+
+        subdoc = deepcopy(subdoc)
+        qry = {"$push": {field: subdoc}}
+
+        target_db.update_one({"_id": obj.obj_id}, qry, upsert=True)
+
     def search_by_essentials(self, obj, db):
         host = db["host"]
         project = db["project"]
