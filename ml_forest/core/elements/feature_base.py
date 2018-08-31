@@ -1,3 +1,5 @@
+import warnings
+import numpy as np
 from bson.objectid import ObjectId
 
 from ml_forest.core.elements.identity import Base
@@ -52,6 +54,10 @@ class Feature(Base):
                     raise TypeError("The parameter lst_fed should consist of obj_id")
 
         super(Feature, self).__init__()
+
+        if not isinstance(values, np.ndarray):
+            warnings.warn("A Feature whose values are not np.ndarray is created. Do you really want that?")
+
 
         self.__values = values
 
