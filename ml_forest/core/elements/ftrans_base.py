@@ -1,3 +1,7 @@
+import warnings
+
+import numpy as np
+
 from copy import deepcopy
 from ml_forest.core.elements.identity import Base
 
@@ -48,6 +52,9 @@ class FTransform(Base):
     def decide_element():
         return "FTransform"
 
+    def transform(self, new_X):
+        raise NotImplementedError()
+
 
 class SklearnModel(FTransform):
     def __init__(self, model_type, **kwargs):
@@ -73,9 +80,79 @@ class SklearnModel(FTransform):
         else:
             return model, model.predict(new_x)
 
-    # TODO: transform should be enough, transform_singleton doesn't make sense ... there should be no folding for test_data
-    def transform_singleton(self, model, new_x):
+    def transform(self, new_X):
+        raise NotImplementedError()
+
+
+class SklearnRegressor(SklearnModel):
+    def __init__(self, model_type, **kwargs):
+        """
+
+                :param model_type:
+                :param kwargs: rise and tuning
+                """
+        super(SklearnRegressor, self).__init__(model_type, **kwargs)
+        self.__essentials = {}
+
+    def transform(self, new_X):
+        lst = []
+        for model in self.models:
+            lst.append(model.predict_proba(new_X))
+
+        stacked_prediction = np.mean(lst, axis=0)
+        return stacked_prediction
+
+
+# TODO: Maybe somehow get the encoding dict to allow non-encoded labels
+class SklearnClassifier(SklearnModel):
+    def __init__(self, model_type, **kwargs):
+        """
+
+                :param model_type:
+                :param kwargs: rise and tuning
+                """
+        super(SklearnClassifier, self).__init__(model_type, **kwargs)
+        self.__essentials = {}
+
+    def transform(self, new_X):
         if "predict_proba" in self.essentials and self.essentials["predict_proba"]:
-            return model.predict_proba(new_x)
+            lst = []
+            for model in self.models:
+                lst.append(model.predict_proba(new_X))
+
+            stacked_prediction = np.mean(lst, axis=0)
+            return stacked_prediction
         else:
-            return model.predict(new_x)
+            """
+            The majority vote is implemented with np.argmax and np.bincount, 
+            whose usage can be demo below:
+            
+            >> import numpy as np
+            
+            >> list(map(
+            >>     lambda ary: np.bincount(ary),
+            >>     np.array([[0,0,1], [1,1,2], [3,3,0]])
+            >> ))
+            [array([2, 1]), array([0, 2, 1]), array([1, 0, 0, 2])]
+
+            >> np.apply_along_axis(
+            >>     lambda ary: np.argmax(np.bincount(ary)),
+            >>     axis=1,
+            >>     arr = np.array([[0,0,1], [1,1,2], [3,3,0]])
+            >> )
+            array([0, 1, 3])
+            """
+            warnings.warn("Currently only works for label encoded labels.")
+            lst = []
+            for model in self.models:
+                lst.append(model.predict(new_X))
+
+            stacked_predictions = np.array(lst).T
+
+            majority_vote = np.apply_along_axis(
+                lambda ary: np.argmax(np.bincount(ary)),
+                axis=1,
+                arr= stacked_predictions
+            )
+
+            return majority_vote
