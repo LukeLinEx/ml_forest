@@ -1,8 +1,8 @@
 from sklearn.naive_bayes import MultinomialNB, BernoulliNB
-from ml_forest.core.elements.ftrans_base import SklearnModel
+from ml_forest.core.elements.ftrans_base import SklearnClassifier
 
 
-class BNB(SklearnModel):
+class BNB(SklearnClassifier):
     def __init__(self, binarize=0.00001, predict_proba=False):
         super(BNB, self).__init__(model_type=BernoulliNB, rise=1)
 
@@ -14,7 +14,7 @@ class BNB(SklearnModel):
             self.__essentials[key] = locals()[key]
 
 
-class MNB(SklearnModel):
+class MNB(SklearnClassifier):
     def __init__(self, predict_proba=False):
         super(MNB, self).__init__(model_type=MultinomialNB, rise=1)
 

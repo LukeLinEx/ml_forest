@@ -1,8 +1,8 @@
 from sklearn.linear_model import Lasso
-from ml_forest.core.elements.ftrans_base import SklearnModel
+from ml_forest.core.elements.ftrans_base import SklearnRegressor
 
 
-class GenerateLasso(SklearnModel):
+class GenerateLasso(SklearnRegressor):
     def __init__(
             self, alpha=1.0, fit_intercept=True, max_iter=1000, normalize=True, precompute=False, positive=False,
             random_state=None, selection='cyclic', tol=0.0001, warm_start=False
