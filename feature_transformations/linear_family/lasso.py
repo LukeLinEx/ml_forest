@@ -19,8 +19,6 @@ class GenerateLasso(SklearnRegressor):
             self.__essentials[key] = locals()[key]
 
 
-
-
 if __name__ == "__main__":
     lasso = GenerateLasso()
     from sklearn.datasets import load_iris
