@@ -56,6 +56,13 @@ class FTransform(Base):
         raise NotImplementedError()
 
 
+# TODO
+class FTransWithPreTrainedModels(FTransform):
+    def __init(self):
+        super(FTransWithPreTrainedModels, self).__init__(rise=0, tuning=False)
+
+
+
 class SklearnModel(FTransform):
     def __init__(self, model_type, **kwargs):
         """
@@ -96,8 +103,8 @@ class SklearnRegressor(SklearnModel):
 
     def transform(self, new_X):
         lst = []
-        for model in self.models:
-            lst.append(model.predict_proba(new_X))
+        for model in self.models.values():
+            lst.append(model.predict(new_X))
 
         stacked_prediction = np.mean(lst, axis=0)
         return stacked_prediction
@@ -117,7 +124,7 @@ class SklearnClassifier(SklearnModel):
     def transform(self, new_X):
         if "predict_proba" in self.essentials and self.essentials["predict_proba"]:
             lst = []
-            for model in self.models:
+            for model in self.models.values():
                 lst.append(model.predict_proba(new_X))
 
             stacked_prediction = np.mean(lst, axis=0)
@@ -144,7 +151,7 @@ class SklearnClassifier(SklearnModel):
             """
             warnings.warn("Currently only works for label encoded labels.")
             lst = []
-            for model in self.models:
+            for model in self.models.values():
                 lst.append(model.predict(new_X))
 
             stacked_predictions = np.array(lst).T
