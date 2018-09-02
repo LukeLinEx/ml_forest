@@ -28,11 +28,11 @@ class CoreInit(Base):
         """
         if not isinstance(data, pd.DataFrame):
             raise TypeError("The data for initialization should be of the type pandas.DataFrame")
-        if col_y not in data:
+        if col_y and col_y not in data:
             raise KeyError("The column name of the target: col_y provided is not in the data")
         if col_selected:
             for key in col_selected:
-                if not isinstance(col_selected[key], list) :
+                if not isinstance(col_selected[key], list):
                     raise TypeError("All the values in the dictionary col_selected have to be lists.")
 
         super(CoreInit, self).__init__()
@@ -51,17 +51,20 @@ class CoreInit(Base):
         self.__frame = frame.obj_id
 
         # Initializing labels
-        values = data[[col_y]].values
-        label = Label(frame.obj_id, None, None, values)
-        label.save_db_file(db=db, filepaths=filepaths)
-        self.__label = label.obj_id
+        if col_y:
+            self._y_name = col_y
+            values = data[[col_y]].values
+            label = Label(frame.obj_id, None, None, values)
+            label.save_db_file(db=db, filepaths=filepaths)
+            self.__label = label.obj_id
+        else:
+            self.__label = None
 
         # Initializing features (columns)
         self._column_groups = {}    # to collect dict like {'num': ['colname1', 'colname2'], 'cate':['colname3'], ...}
         self._init_features = {}    # {'num': obj_id(data['colname1', 'colname2']),
                                     #  'cate': obj_id(data['colname3']), ...}
 
-        self._y_name = col_y
         if isinstance(col_selected, dict):
             for key in col_selected:
                 cols = col_selected[key]

@@ -92,7 +92,10 @@ class FConnector(object):
         ih = IOHandler()
         frame = ih.load_obj_from_file(frame_id, "Frame", filepaths)
         lst_fed = [ih.load_obj_from_file(f_id, "Feature", filepaths) for f_id in lst_fed_id]
-        label = ih.load_obj_from_file(label_id, "Label", filepaths)
+        if label_id:
+            label = ih.load_obj_from_file(label_id, "Label", filepaths)
+        else:
+            label = None
         f_transform = f_node.f_transform
 
         ff = FFlow()
@@ -126,13 +129,21 @@ class FConnector(object):
         filepaths = f_node.core.filepaths
 
         frame_id = f_node.core.frame
-        label_id = f_node.l_node.obj_id
+
+        if f_node.l_node:
+            label_id = f_node.l_node.obj_id
+        else:
+            label_id = None
+
         lst_fed_id = [f.obj_id for f in f_node.lst_fed]
 
         ih = IOHandler()
         frame = ih.load_obj_from_file(frame_id, "Frame", filepaths)
         lst_fed = [ih.load_obj_from_file(f_id, "Feature", filepaths) for f_id in lst_fed_id]
-        label = ih.load_obj_from_file(label_id, "Label", filepaths)
+        if label_id:
+            label = ih.load_obj_from_file(label_id, "Label", filepaths)
+        else:
+            label = None
         f_transform = f_node.f_transform
 
         ff = FFlow()

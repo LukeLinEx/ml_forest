@@ -108,7 +108,7 @@ class FNode(StackingNode):
             raise TypeError("The paramenter f_transform should be of the type FTransform")
 
         if l_node and not isinstance(l_node, LNode):
-            raise TypeError("The parameter l_node should be of the type LNode")
+            raise TypeError("The parameter l_node should be of the type LNode or NoneType")
 
         return core, lst_fed, f_transform, l_node
 
@@ -119,7 +119,11 @@ class FNode(StackingNode):
         dh = DbHandler()
         all_docs = []
         for f_tran in lst_f_transform:
-            tmp = Feature(frame=frame, f_transform=f_tran, lst_fed=lst_fed, label=self.l_node.obj_id, values=None)
+            if self.l_node:
+                l_id = self.l_node.obj_id
+            else:
+                l_id = None
+            tmp = Feature(frame=frame, f_transform=f_tran, lst_fed=lst_fed, label=l_id, values=None)
             all_docs.extend(dh.search_by_essentials(tmp, self.core.db))
         all_docs = sorted(all_docs, key=lambda d: not bool(d["filepaths"]))
 
