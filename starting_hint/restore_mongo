@@ -1,0 +1,9 @@
+1. download backup files (easier with boto3)
+2. docker run -v `pwd`:/backup -p 27017:27017 --name ml_forest_db -d mongo:latest
+3. docker exec -it ml_forest_db bash
+
+
+# Now with command line inside docker
+1. cd /backup
+2. mongorestore --db admin ./admin
+3. mongorestore --db otto ./otto

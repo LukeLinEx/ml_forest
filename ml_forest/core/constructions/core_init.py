@@ -75,6 +75,7 @@ class CoreInit(Base):
                 feature.stage = 0
                 feature.save_db_file(db=db, filepaths=filepaths)
                 self._init_features[key] = feature.obj_id
+            self.col_selected = col_selected
         elif not col_selected:
             cols = data.columns
 
@@ -82,6 +83,7 @@ class CoreInit(Base):
             feature = Feature(frame.obj_id, None, None, None, values=values)
             feature.save_db_file(db=db, filepaths=filepaths)
             self._init_features['raw'] = feature.obj_id
+            self.col_selected = cols
         elif isinstance(col_selected, list):
             raise NotImplementedError("Currently only support dictionary to initialize features")
         else:
