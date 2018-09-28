@@ -8,21 +8,6 @@ from ml_forest.core.elements.ltrans_base import LTransform
 from ml_forest.core.constructions.io_handler import IOHandler
 
 
-
-
-# class MiniPipe(object):
-#     def flow_to(self, node):
-#         if isinstance(node, FNode):
-#             if node.f_transform.rise == 1:
-#                 fh = FHandler()
-#                 f_values, f_transform, stage = fh.supervised_fit_transform(node)
-#                 return f_values, f_transform, stage
-#             else:
-#                 fh = FHandler()
-#                 f_values, f_transform = fh.unsupervised_fit_transform(node)
-#                 return f_values, f_transform
-
-
 class LFlow(object):
     def label_encoding_transform(self, frame, lab_fed, l_transform):
         """

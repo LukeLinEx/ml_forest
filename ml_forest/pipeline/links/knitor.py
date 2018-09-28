@@ -7,6 +7,7 @@ from ml_forest.core.constructions.io_handler import IOHandler
 from ml_forest.pipeline.links.connector import FConnector, LConnector
 
 
+# TODO: in f_(sub)knit, returning f_transform makes no sense since fnode has that already
 class Knitor(object):
     def __init__(self):
         matched = {

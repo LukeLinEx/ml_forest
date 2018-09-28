@@ -10,6 +10,10 @@ from ml_forest.pipeline.nodes.stacking_node import FNode, LNode
 # Connectors do not update node's obj_id nor filepaths
 
 
+def has_ref(f_transform):
+    return hasattr(f_transform, 'ref_id')
+
+
 class FConnector(object):
     def __init__(self, matched):
         self.matched = matched
@@ -73,8 +77,7 @@ class FConnector(object):
 
         return lst_transform_ids
 
-    @staticmethod
-    def recover_with_existing_doc(f_node, doc):
+    def recover_with_existing_doc(self, f_node, doc):
         """
 
         :param f_node:
@@ -86,23 +89,10 @@ class FConnector(object):
 
         frame_id = f_node.core.frame
         label_id = doc["essentials"]["label"]
-        lst_fed_id = [f.obj_id for f in f_node.lst_fed]
         f_transform_id = doc["essentials"]["f_transform"]
 
-        ih = IOHandler()
-        frame = ih.load_obj_from_file(frame_id, "Frame", filepaths)
-        lst_fed = [ih.load_obj_from_file(f_id, "Feature", filepaths) for f_id in lst_fed_id]
-        if label_id:
-            label = ih.load_obj_from_file(label_id, "Label", filepaths)
-        else:
-            label = None
-        f_transform = f_node.f_transform
-
-        ff = FFlow()
-        if f_transform.rise == 1:
-            f_values, f_transform, stage = ff.supervised_fit_transform(frame, lst_fed, f_transform, label)
-        else:
-            f_values, f_transform, stage = ff.unsupervised_fit_transform(lst_fed, f_transform)
+        lst_fed_id = [f.obj_id for f in f_node.lst_fed]
+        f_values, f_transform, stage = self.__go(f_node, frame_id, filepaths, label_id)
 
         f_transform.obj_id = f_transform_id
         f_transform.set_db(db)
@@ -116,8 +106,7 @@ class FConnector(object):
 
         return feature, f_transform
 
-    @staticmethod
-    def create_and_record(f_node):
+    def create_and_record(self, f_node):
         """
         Build the object according to the "DNA" in f_node.
         This should be used when no record of the target object is found from the db
@@ -136,21 +125,7 @@ class FConnector(object):
             label_id = None
 
         lst_fed_id = [f.obj_id for f in f_node.lst_fed]
-
-        ih = IOHandler()
-        frame = ih.load_obj_from_file(frame_id, "Frame", filepaths)
-        lst_fed = [ih.load_obj_from_file(f_id, "Feature", filepaths) for f_id in lst_fed_id]
-        if label_id:
-            label = ih.load_obj_from_file(label_id, "Label", filepaths)
-        else:
-            label = None
-        f_transform = f_node.f_transform
-
-        ff = FFlow()
-        if f_transform.rise == 1:
-            f_values, f_transform, stage = ff.supervised_fit_transform(frame, lst_fed, f_transform, label)
-        else:
-            f_values, f_transform, stage = ff.unsupervised_fit_transform(lst_fed, f_transform)
+        f_values, f_transform, stage = self.__go(f_node, frame_id, filepaths, label_id)
 
         f_transform.save_db(db)
 
@@ -161,6 +136,30 @@ class FConnector(object):
         feature.save_db(db)
 
         return feature, f_transform
+
+    @staticmethod
+    def __go(f_node, frame_id, filepaths, label_id):
+        lst_fed_id = [f.obj_id for f in f_node.lst_fed]
+        ih = IOHandler()
+        frame = ih.load_obj_from_file(frame_id, "Frame", filepaths)
+        lst_fed = [ih.load_obj_from_file(f_id, "Feature", filepaths) for f_id in lst_fed_id]
+        if label_id:
+            label = ih.load_obj_from_file(label_id, "Label", filepaths)
+        else:
+            label = None
+        f_transform = f_node.f_transform
+
+        if has_ref(f_transform):
+            # TODO!!!
+            pass
+        else:
+            ff = FFlow()
+            if f_transform.rise == 1:
+                f_values, f_transform, stage = ff.supervised_fit_transform(frame, lst_fed, f_transform, label)
+            else:
+                f_values, f_transform, stage = ff.unsupervised_fit_transform(lst_fed, f_transform)
+
+        return f_values, f_transform, stage
 
 
 class LConnector(object):
