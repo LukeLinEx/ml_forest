@@ -44,6 +44,10 @@ class SimpleDummy(FTransform):
             self._all_classes = all_classes
 
         value = tmp[self._col_encoded]
+
+        self.__essentials["col_encoded"] = self._col_encoded
+        self.__essentials["all_classes"] = self._all_classes
+
         return None, value
 
     def transform(self, fed_test_value):

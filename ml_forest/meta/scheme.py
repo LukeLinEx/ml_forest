@@ -6,13 +6,13 @@ from ml_forest.core.elements.identity import Base
 from ml_forest.core.constructions.db_handler import DbHandler
 from ml_forest.core.constructions.io_handler import IOHandler
 
-from ml_forest.pipeline.nodes.stacking_node import FNode
-from ml_forest.pipeline.nodes_pack import Connector
+from ml_forest.pipeline.nodes.stacking_node import FNode, LNode
+from ml_forest.pipeline.links.knitor import Knitor
 
 
 # TODO: this is a temperary version. We need a thorough refactor
 class Scheme(Base):
-    def __init__(self, layer, grid_dict, evaluators, pipe_init, frame, lst_fed, f_transform_type, label):
+    def __init__(self, layer, grid_dict, evaluators, core_docs, lst_fed, f_transform_type, lnode):
         """
         !!!!!!! EXTENDIBLILITY !!!!!!!!!!
         !!!!!!!!!! The output should be a series of (feature, f_transform)s
@@ -21,39 +21,46 @@ class Scheme(Base):
         :param layer: int, TODO: allow derive from lst_fed in the future
         :param grid_dict: list of dicts. All keys need to be legal to pass to a f_transofrm
         :param evaluators: lst of evaluating functions
-        :param pipe_init: obj_id
-        :param frame: obj_id
+        :param core_docs: ml_forest.core.constructions.core_init.CoreInit
         :param lst_fed: list of obj_id
-        :param label: obj_id
+        :param lnode: obj_id
         :param f_transform_type: <type 'type'>
         """
-        for fed in lst_fed + [label]:
-            if not isinstance(fed, ObjectId):
-                raise TypeError("currently can only accept ObjectId of a label or a feature")
-        assert frame.depth >= layer, "The input layer can't be more than the depth of the frame"
+        for fed in lst_fed:
+            if not isinstance(fed, FNode) or (fed.obj_id is None):
+                raise TypeError("Currently can only accept FNode with obj_id (fitted) as features")
+
+        if not isinstance(lnode, LNode) or lnode.obj_id is None:
+            raise TypeError("Currently can only accept LNode with obj_id.")
 
         super(Scheme, self).__init__()
         self.__f_transform_type = f_transform_type
         self.__essentials = {
-            "pipe_init": pipe_init.obj_id,
-            "frame": frame,
-            "lst_fed": lst_fed,
-            "label": label,
-            "f_transform_type": f_transform_type
+            "pipe_init": core_docs.obj_id,
+            # "evaluators": evaluators,
+            "lst_fed": [f.obj_id for f in lst_fed],
+            "lnode": lnode.obj_id,
+            "f_transform_type": f_transform_type,
+            "type": "Scheme"  # this prevents the subclasses of Scheme saved differently in db.
         }
 
-        # TODO: need to reconsider this. Currently this is the only obj (not obj_id) saved in Scheme
-        self.__pipe_init = pipe_init
+        self.__core = core_docs
 
         self.__layer = layer
         self.__evaluators = evaluators
         self.__result_grid, self.__performance_grid = self.create_grid(grid_dict)
 
+        # ih = IOHandler()
+        # self.__label = ih.load_obj_from_file(lnode.obj_id, "Label", core_docs.filepaths)
+
     def create_grid(self, grid_dict):
-        frame_id = self.__essentials["frame"]
-        filepaths = self.__pipe_init.filepaths
+        frame_id = self.__core.frame
+        filepaths = self.__core.filepaths
+
         ih = IOHandler()
         frame = ih.load_obj_from_file(frame_id, "Frame", filepaths)
+        if frame.depth < self.__layer:
+            raise ValueError("The input layer can't be more than the depth of the frame.")
 
         idx = pd.MultiIndex.from_product(grid_dict.values(), names=grid_dict.keys())
         folds = frame.create_structure(self.__layer)
@@ -148,7 +155,7 @@ class Scheme(Base):
         :param key:
         :return:
         """
-        filepaths = self.pipe_init.filepaths
+        filepaths = self.__core.filepaths
 
         param_lst = []
         ih = IOHandler()
@@ -200,7 +207,7 @@ class Scheme(Base):
         label = self.label
         lst_fed = self.lst_fed
         frame = self.frame
-        pipe_init = self.__pipe_init
+        core = self.__core
 
         fold_idx = frame.create_structure(self.layer)
         combination = self.get_starter()
@@ -208,32 +215,30 @@ class Scheme(Base):
         while bool(combination):
             params = dict(zip(names, combination))
             f_transform = self.__f_transform_type(**params)
-            fnode = FNode(pipe_init, lst_fed, f_transform, label)
-            connector = Connector()
-            connector.locate(fnode)
+            lnode = LNode(core=self.__core, obj_id=self.essentials["lnode"], filepaths=self.__core.filepaths)
+            f_node = FNode(core, lst_fed, f_transform, lnode)
+            kn = Knitor()
+            feature, f_transform = kn.f_knit(f_node)
 
-
-            fnode.search()
-            feature = Feature.get_obj_from_cls_filepaths(self.filepaths, fnode.obj_id)
-            label = Label.get_obj_from_cls_filepaths(self.filepaths, feature.label)
             self.__result_grid.loc[combination, "feature_id"] = feature.obj_id
-            self.__result_grid.loc[combination, "f_transform_id"] = feature.f_transform
+            self.__result_grid.loc[combination, "f_transform_id"] = feature.essentials["f_transform"]
 
+            label = self.label
             for idx in fold_idx:
                 rows = frame.get_single_fold(idx)
                 f = feature.values[rows, :]
                 l = label.values[rows]
 
                 for evaluator in self.evaluators:
-                    self.__performance_grid[(evaluator.name, idx)].loc[combination] = evaluator.evaluate(f, l)
+                    self.__performance_grid[(evaluator.__name__, idx)].loc[combination] = evaluator(f, l)
 
             self.update_scheme()
             combination = self.get_next()
 
     @property
     def label(self):
-        filepaths = self.__pipe_init.filepaths
-        lid = self.__essentials["label"]
+        filepaths = self.__core.filepaths
+        lid = self.__essentials["lnode"]
 
         ih = IOHandler()
         return ih.load_obj_from_file(lid, "Label", filepaths)
@@ -242,18 +247,27 @@ class Scheme(Base):
     def layer(self):
         return self.__layer
 
+    # @property
+    # def lst_fed(self):
+    #     filepaths = self.__core.filepaths
+    #     lst_fed = self.__essentials["lst_fed"]
+    #
+    #     ih = IOHandler()
+    #     return [ih.load_obj_from_file(fid, "Feature", filepaths) for fid in lst_fed]
+
     @property
     def lst_fed(self):
-        filepaths = self.__pipe_init.filepaths
-        lst_fed = self.__essentials["lst_fed"]
+        filepaths = self.__core.filepaths
 
-        ih = IOHandler()
-        return [ih.load_obj_from_file(fid, "Feature", filepaths) for fid in lst_fed]
+        lst_fed = self.__essentials["lst_fed"]
+        lst_fed = [FNode(core=self.__core, obj_id=fid, filepaths=filepaths) for fid in lst_fed]
+
+        return lst_fed
 
     @property
     def frame(self):
-        filepaths = self.__pipe_init.filepaths
-        _id = self.__essentials["frame"]
+        filepaths = self.__core.filepaths
+        _id = self.__core.frame
 
         ih = IOHandler()
         return ih.load_obj_from_file(_id, "Frame", filepaths)
@@ -264,12 +278,12 @@ class Scheme(Base):
 
 
 class SimpleGridSearch(Scheme):
-    def __init__(self, layer, grid_dict, evaluators, pipe_init, frame, lst_fed, f_transform_type, label):
+    def __init__(self, layer, grid_dict, evaluators, core_docs, lst_fed, f_transform_type, lnode):
         super(SimpleGridSearch, self).__init__(
-            layer, grid_dict, evaluators, pipe_init, frame, lst_fed, f_transform_type, label
+            layer, grid_dict, evaluators, core_docs, lst_fed, f_transform_type, lnode
         )
-        obj = Scheme(layer, grid_dict, evaluators, pipe_init, frame, lst_fed, f_transform_type, label)
-        obj = obj.search_for_scheme(pipe_init.db)
+        obj = Scheme(layer, grid_dict, evaluators, core_docs, lst_fed, f_transform_type, lnode)
+        obj = obj.search_for_scheme(core_docs.db)
 
         if bool(obj):
             print("An old Scheme object is found and used")
@@ -282,7 +296,7 @@ class SimpleGridSearch(Scheme):
                 self.update_scheme()
         else:
             self.__essentials = {}
-            self.save_db_file(pipe_init.db, pipe_init.filepaths)
+            self.save_db_file(core_docs.db, core_docs.filepaths)
 
     def get_starter(self):
         return self.performance_grid.index[0]
@@ -297,18 +311,3 @@ class SimpleGridSearch(Scheme):
             return remain[0]
         else:
             return None
-
-
-# if __name__ == "__main__":
-#     from sklearn.metrics import accuracy_score, log_loss
-#     from ml_forest.core.elements.frame_base import Frame
-#
-#     evaluators = [accuracy_score, log_loss]
-#     frame = Frame(203, [2, 3, 5])
-#     grid_dict = {"a": [1,2,3], "b":["x", "y", "z"]}
-#     s = Scheme(0, grid_dict, evaluators, frame, frame, [], [ObjectId()], ObjectId())
-#
-#     print(
-#         s.performance_grid
-#     )
-#
