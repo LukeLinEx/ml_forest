@@ -149,9 +149,10 @@ class FConnector(object):
             label = None
         f_transform = f_node.f_transform
 
+        # TODO: might need to refactor transform with ref better
         if has_ref(f_transform):
-            # TODO!!!
-            pass
+            f_values, stage = f_transform.transform_with_ref(f_node)
+        #############################################################
         else:
             ff = FFlow()
             if f_transform.rise == 1:

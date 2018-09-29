@@ -44,9 +44,7 @@ class SimpleDummy(FTransform):
             self._all_classes = all_classes
 
         value = tmp[self._col_encoded]
-
-        self.__essentials["col_encoded"] = self._col_encoded
-        self.__essentials["all_classes"] = self._all_classes
+        value = value.values
 
         return None, value
 
@@ -81,4 +79,3 @@ class SimpleDummy(FTransform):
     @property
     def all_classes(self):
         return self._all_classes
-

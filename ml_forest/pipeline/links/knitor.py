@@ -108,7 +108,7 @@ class Knitor(object):
         if f_node.filepaths:
             ih = IOHandler()
             feature = ih.load_obj_from_file(f_node.obj_id, "Feature", f_node.filepaths)
-            f_transform_id = feature.f_transform
+            f_transform_id = feature.essentials["f_transform"]
             f_transform = ih.load_obj_from_file(f_transform_id, "FTransform", f_node.filepaths)
         else:
             doc = self.fc.collect_doc(f_node)

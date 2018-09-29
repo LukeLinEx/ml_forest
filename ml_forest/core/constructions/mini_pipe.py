@@ -5,9 +5,6 @@ from ml_forest.core.elements.label_base import Label
 from ml_forest.core.elements.ltrans_base import LTransform
 
 
-from ml_forest.core.constructions.io_handler import IOHandler
-
-
 class LFlow(object):
     def label_encoding_transform(self, frame, lab_fed, l_transform):
         """
@@ -22,7 +19,6 @@ class LFlow(object):
         new_label_values = l_transform.encode_whole(lab_fed.values)
 
         return new_label_values, l_transform
-
 
 
 class FFlow(object):
@@ -114,7 +110,7 @@ class FFlow(object):
 
         values = np.concatenate(values, axis=0)
         prevstage = frame.depth - work_layer
-        stage = prevstage + 1 # TODO: should probably change to f_transform.rise
+        stage = prevstage + 1  # TODO: should probably change to f_transform.rise
 
         return values, dict(models), stage
 
