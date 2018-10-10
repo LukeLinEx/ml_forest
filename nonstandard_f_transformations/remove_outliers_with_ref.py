@@ -55,7 +55,7 @@ class CookDistWithRef(FTransform):
             feature_values.append(feature.values)
         _id = ih.load_obj_from_file(
             ref_core.init_features["Id"], "Feature", filepaths
-        )
+        ).values.ravel()
 
         feature_values = np.concatenate(feature_values, axis=1)
 
@@ -77,8 +77,9 @@ class CookDistWithRef(FTransform):
 
         ref_cd = pd.DataFrame({"_id": _id, "cd": c}).sort_values("cd", ascending=False)
         outlier_id = set(ref_cd.loc[ref_cd["cd"] > self.__threshold, "_id"])
+        print(type(ref_cd))
 
-        # Filter the outliers
+        # Filtering outsiders
         col_ids = ih.load_obj_from_file(
             pipe_init.init_features["Id"], "Feature", filepaths
         )
