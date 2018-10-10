@@ -6,10 +6,11 @@ from ml_forest.core.elements.ftrans_base import FTransform
 from ml_forest.core.constructions.io_handler import IOHandler
 
 from ml_forest.pipeline.pipe_init import PipeInit
-from ml_forest.pipeline.nodes.stacking_node import FNode, LNode
+from ml_forest.pipeline.nodes.stacking_node import LNode
 from ml_forest.pipeline.links.knitor import Knitor
 
 from label_transformations.log_transform import LogTransform
+
 
 class CookDistWithRef(FTransform):
     def __init__(self, ref_id, threshold=0.05):
@@ -62,7 +63,7 @@ class CookDistWithRef(FTransform):
         lnode = LNode(ref_core, ref_init.init_lnode, LogTransform(shift=1))
         l, lt = kn.l_knit(lnode)
 
-        ### Modeling part
+        # Modeling part
         data = pd.DataFrame(feature_values)
         data.rename(columns=self.__colname_tmp, inplace=True)
         data["y"] = l.values.ravel()
@@ -77,7 +78,7 @@ class CookDistWithRef(FTransform):
         ref_cd = pd.DataFrame({"_id": _id, "cd": c}).sort_values("cd", ascending=False)
         outlier_id = set(ref_cd.loc[ref_cd["cd"] > self.__threshold, "_id"])
 
-        ###
+        # Filter the outliers
         col_ids = ih.load_obj_from_file(
             pipe_init.init_features["Id"], "Feature", filepaths
         )
@@ -93,4 +94,4 @@ class CookDistWithRef(FTransform):
 
         final = feature_values[col_ids, :]
 
-        return feature_values
+        return final

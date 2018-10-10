@@ -12,6 +12,7 @@ setup(
         "scipy",
         "sklearn",
         "jupyter",
-        "xgboost"
+        "xgboost",
+        "statsmodels"
     ]
 )
