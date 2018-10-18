@@ -30,7 +30,7 @@ class Frame(Base):
 
         :type num_observations: int
         """
-        if not np.array(lst_layers).dtype == int:
+        if len(lst_layers) > 0 and not np.array(lst_layers).dtype == int:
             raise TypeError('The lst_layer should contain only integers.')
         if not isinstance(num_observations, int):
             raise TypeError('the num_observations should be an integer')
@@ -230,4 +230,8 @@ if __name__ == '__main__':
     # project = "housing_price"
     #
     # db = {"host": bucket, "project": project}
-    frame = Frame(203, [2,3, 5])
+    frame = Frame(203, [])
+    # print(frame.create_structure( tuple() ))
+    print(frame.depth)
+    # print(frame.get_train_test_key_pairs(1))
+    # print(frame.get_train_test_key_pairs(0))
