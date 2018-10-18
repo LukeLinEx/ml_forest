@@ -1,3 +1,4 @@
+import warnings
 import numpy as np
 
 from ml_forest.core.elements.frame_base import Frame
@@ -35,7 +36,10 @@ class FFlow(object):
         work_layer = frame.depth - prevstage
 
         if work_layer == 0:
-            raise NotImplementedError("Not implemented yet. Need to be more careful.")
+            new_feature_values, model_collection, stage = self.last_layer_supervised_train(
+                frame, work_layer, fed_values, l_values, f_transform
+            )
+            # raise NotImplementedError("Not implemented yet. Need to be more careful.")
         else:
             if f_transform.tuning:
                 new_feature_values, model_collection, stage = self.out_sample_train_with_tuning(
@@ -82,6 +86,15 @@ class FFlow(object):
         models = {(0,): model}
 
         return values, models
+
+    def last_layer_supervised_train(self, frame, work_layer, fed_values, l_values, f_transform):
+        model, values = f_transform.fit_singleton(fed_values, l_values, fed_values)
+        models = {(0,): model}
+
+        prevstage = frame.depth - work_layer
+        stage = prevstage + 1
+
+        return values, models, stage
 
     @staticmethod
     def out_sample_train(frame, work_layer, fed_values, l_values, f_transform):
