@@ -9,6 +9,12 @@ from ml_forest.pipeline.links.connector import FConnector, LConnector
 
 # TODO: in f_(sub)knit, returning f_transform makes no sense since fnode has that already
 class Knitor(object):
+    """
+
+    Each Knitor instance should be used for one full training task (to be defined more precisely, an typical training
+    task could be a grid search). A new knitor re-initialize `matched`, which prevents from looking into those matched
+    with other features already. Reuse a Knitor instance will miss existing features in searching.
+    """
     def __init__(self):
         matched = {
             "f": [], "l": []

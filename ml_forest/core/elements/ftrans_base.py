@@ -62,7 +62,6 @@ class FTransWithPreTrainedModels(FTransform):
         super(FTransWithPreTrainedModels, self).__init__(rise=0, tuning=False)
 
 
-
 class SklearnModel(FTransform):
     def __init__(self, model_type, **kwargs):
         """
@@ -83,9 +82,13 @@ class SklearnModel(FTransform):
         model.fit(x, y)
 
         if "predict_proba" in self.essentials and self.essentials["predict_proba"]:
-            return model, model.predict_proba(new_x)
+            values = model.predict_proba(new_x)
+            return model, values
         else:
-            return model, model.predict(new_x)
+            values = model.predict(new_x)
+            if len(values.shape) < 1:
+                values = values.reshape(-1, 1)
+            return model, values
 
     def transform(self, new_X):
         raise NotImplementedError()
