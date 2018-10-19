@@ -86,7 +86,7 @@ class SklearnModel(FTransform):
             return model, values
         else:
             values = model.predict(new_x)
-            if len(values.shape) < 1:
+            if len(values.shape) == 1:
                 values = values.reshape(-1, 1)
             return model, values
 
