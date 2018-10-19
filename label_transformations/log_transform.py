@@ -10,7 +10,7 @@ class LogTransform(LTransform):
         if base:
             self.__base = base
         else:
-            self.__base = round(math.e, 11)
+            self.__base = math.e
 
         self.__shift = shift
         self.__essentials = {"base": self.__base, "shift": self.__shift}
