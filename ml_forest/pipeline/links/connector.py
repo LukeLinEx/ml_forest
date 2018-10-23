@@ -51,7 +51,7 @@ class FConnector(object):
         :return:
         """
         if not isinstance(f_node, FNode):
-            raise TypeError("The parameter f_node should of the type FNode.")
+            raise TypeError("The parameter f_node should be of the type FNode.")
 
         if old_record:
             if old_record["filepaths"]:
