@@ -28,6 +28,10 @@ class RmOutlierRefCookDistance(FTransform):
         ).values
         self.__toberemoved = set(ref_identifications[boo, ].ravel())
 
+        self.__essentials = {"ref_id": ref_core.obj_id, "ref_feature_id": None}
+        if ref_fnode.obj_id:
+            self.__essentials["ref_feature_id"] = ref_fnode.obj_id
+
     def transform_with_ref(self, fnode, id_col_name="Id"):
         core = fnode.core
         lst_fed = fnode.lst_fed
