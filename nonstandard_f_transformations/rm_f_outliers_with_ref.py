@@ -9,7 +9,7 @@ class RmOutlierRefCookDistance(FTransform):
     ih = IOHandler()
 
     def __init__(self, ref_fnode, threshold=0.5, id_col_name="Id", save_ref=True):
-        super(RmOutlierRefCookDistance, self).__init__(rise=1)
+        super(RmOutlierRefCookDistance, self).__init__(rise=0)
         self.__ref_id = ref_fnode.core.obj_id
         self.__threshold = threshold
 
@@ -28,7 +28,7 @@ class RmOutlierRefCookDistance(FTransform):
         ).values
         self.__toberemoved = set(ref_identifications[boo, ].ravel())
 
-        self.__essentials = {"ref_id": ref_core.obj_id, "ref_feature_id": None}
+        self.__essentials = {"ref_id": ref_core.obj_id, "ref_feature_id": None, "threshold": self.threshold}
         if ref_fnode.obj_id:
             self.__essentials["ref_feature_id"] = ref_fnode.obj_id
 

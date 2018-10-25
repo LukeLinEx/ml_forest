@@ -1,5 +1,7 @@
 from ml_forest.core.elements.label_base import Label
 from ml_forest.core.elements.feature_base import Feature
+from ml_forest.core.elements.ftrans_base import FTransform
+from ml_forest.core.elements.ltrans_base import LTransform
 
 from ml_forest.core.constructions.db_handler import DbHandler
 from ml_forest.core.constructions.io_handler import IOHandler
@@ -10,8 +12,10 @@ from ml_forest.pipeline.nodes.stacking_node import FNode, LNode
 # Connectors do not update node's obj_id nor filepaths
 
 
-def has_ref(f_transform):
-    return hasattr(f_transform, 'ref_id')
+def has_ref(transform):
+    if not isinstance(transform, FTransform) and not isinstance(transform, LTransform):
+        raise TypeError("The transform passed is neither a FTransform nor a LTransform")
+    return hasattr(transform, 'ref_id')
 
 
 class FConnector(object):
@@ -163,6 +167,7 @@ class FConnector(object):
         return f_values, f_transform, stage
 
 
+# TODO: finish rm_l_outliers_with_ref, test it
 class LConnector(object):
     def __init__(self, matched):
         self.matched = matched
@@ -225,8 +230,7 @@ class LConnector(object):
         lst_transform_ids = [x["_id"]for x in lst_transform_ids if x["_id"] not in self.matched]
         return lst_transform_ids
 
-    @staticmethod
-    def recover_with_existing_doc(l_node, doc):
+    def recover_with_existing_doc(self, l_node, doc):
         """
         From the document we found, recover the Label and the LTransform object.
         This should be used when a record is found in the db but the object itself is not saved
@@ -236,19 +240,12 @@ class LConnector(object):
         :return:
         """
         db = l_node.core.db
-        filepaths = l_node.core.filepaths
 
         frame_id = l_node.core.frame
         lab_fed_id = l_node.lab_fed.obj_id
         l_transform_id = doc["essentials"]["l_transform"]
 
-        ih = IOHandler()
-        frame = ih.load_obj_from_file(frame_id, "Frame", filepaths)
-        lab_fed = ih.load_obj_from_file(lab_fed_id, "Label", filepaths)
-        l_transform = l_node.l_transform
-
-        lflow = LFlow()
-        l_values, l_transform = lflow.label_encoding_transform(frame, lab_fed, l_transform)
+        l_values, l_transform = self.__go(l_node)
 
         l_transform.obj_id = l_transform_id
         l_transform.set_db(db)
@@ -259,8 +256,7 @@ class LConnector(object):
 
         return label, l_transform
 
-    @staticmethod
-    def create_and_record(l_node):
+    def create_and_record(self, l_node):
         """
         Build the object according to the "DNA" in l_node.
         This should be used when no record of the target object is found from the db
@@ -269,21 +265,35 @@ class LConnector(object):
         :return:
         """
         db = l_node.core.db
-        filepaths = l_node.core.filepaths
 
         frame_id = l_node.core.frame
         lab_fed_id = l_node.lab_fed.obj_id
 
-        ih = IOHandler()
-        frame = ih.load_obj_from_file(frame_id, "Frame", filepaths)
-        lab_fed = ih.load_obj_from_file(lab_fed_id, "Label", filepaths)
-        l_transform = l_node.l_transform
-
-        lflow = LFlow()
-        l_values, l_transform = lflow.label_encoding_transform(frame, lab_fed, l_transform)
+        l_values, l_transform = self.__go(l_node)
 
         l_transform.save_db(db)
         label = Label(frame=frame_id, l_transform=l_transform.obj_id, raw_y=lab_fed_id, values=l_values)
         label.save_db(db)
 
         return label, l_transform
+
+    @staticmethod
+    def __go(l_node):
+        frame_id = l_node.core.frame
+        lab_fed_id = l_node.lab_fed.obj_id
+        l_transform = l_node.l_transform
+        filepaths = l_node.core.filepaths
+
+        ih = IOHandler()
+        frame = ih.load_obj_from_file(frame_id, "Frame", filepaths)
+        lab_fed = ih.load_obj_from_file(lab_fed_id, "Label", filepaths)
+
+        # TODO: might need to refactor transform with ref better
+        if has_ref(l_transform):
+            l_values = l_transform.transform_with_ref(l_node)
+            #############################################################
+        else:
+            lflow = LFlow()
+            l_values, l_transform = lflow.label_encoding_transform(frame, lab_fed, l_transform)
+
+        return l_values, l_transform
