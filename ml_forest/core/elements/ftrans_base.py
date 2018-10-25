@@ -77,7 +77,7 @@ class SklearnModel(FTransform):
     def fit_singleton(self, x, y, new_x):
         model = self.__model_type()
         for key in model.get_params():
-            if key in self.__essentials:
+            if key in self.essentials:
                 model.set_params(**{key: self.essentials[key]})
         model.fit(x, y)
 
