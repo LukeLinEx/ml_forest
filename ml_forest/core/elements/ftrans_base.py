@@ -79,6 +79,9 @@ class SklearnModel(FTransform):
         for key in model.get_params():
             if key in self.essentials:
                 model.set_params(**{key: self.essentials[key]})
+
+        if len(y.shape) > 1 and y.shape[1]==1:
+            y = y.ravel()
         model.fit(x, y)
 
         if "predict_proba" in self.essentials and self.essentials["predict_proba"]:
