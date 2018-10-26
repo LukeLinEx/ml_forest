@@ -40,7 +40,7 @@ class RmOutlierRefCookDistance(LTransform):
         ).values.ravel()
         boo = [i not in self.__toberemoved for i in identifications]
 
-        fed_values = self.ih.load_obj_from_file(lab_fed.obj_id, "Label", core.filepaths)
+        fed_values = self.ih.load_obj_from_file(lab_fed.obj_id, "Label", core.filepaths).values
         values = fed_values[boo, :]
 
         return values

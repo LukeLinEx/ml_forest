@@ -167,7 +167,6 @@ class FConnector(object):
         return f_values, f_transform, stage
 
 
-# TODO: finish rm_l_outliers_with_ref, test it
 class LConnector(object):
     def __init__(self, matched):
         self.matched = matched
