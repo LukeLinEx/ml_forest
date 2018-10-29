@@ -1,6 +1,8 @@
+# from ml_forest.meta.scheme import SimpleGridSearch
+
+from bson.objectid import ObjectId
 import numpy as np
 import pandas as pd
-from bson.objectid import ObjectId
 
 from ml_forest.core.elements.identity import Base
 from ml_forest.core.constructions.db_handler import DbHandler
@@ -80,7 +82,7 @@ class Scheme(Base):
         dh = DbHandler()
         docs = dh.search_by_essentials(self, db)
 
-        if bool(docs):
+        if docs:
             doc = docs[0]
             obj_id = doc["_id"]
             filepaths = doc["filepaths"]
@@ -110,23 +112,20 @@ class Scheme(Base):
 
         m = self.essentials["f_transform_type"]()
         all_grid_keys = old_performance_grid.index.names
+
         for key in all_grid_keys:
             if key not in grid_dict:
                 grid_dict[key] = [m.essentials[key]]
 
         new_result_grid, new_performance_grid = self.create_grid(grid_dict)
+
         idx = self.none_repeat_index(old_result_grid, new_result_grid)
 
         new_performance_grid = new_performance_grid.loc[idx]
         new_result_grid = new_result_grid.loc[idx]
 
-        new_performance_grid = pd.concat(
-            [old_performance_grid.reset_index(), new_performance_grid.reset_index()]
-        ).set_index(all_grid_keys)
-
-        new_result_grid = pd.concat(
-            [old_result_grid.reset_index(), new_result_grid.reset_index()]
-        ).set_index(all_grid_keys)
+        new_performance_grid = pd.concat([old_performance_grid, new_performance_grid])
+        new_result_grid = pd.concat([old_result_grid, new_result_grid])
 
         self.update_grid(
             pgrid=new_performance_grid,
@@ -136,50 +135,52 @@ class Scheme(Base):
     def insert_new_index(self, grid_df, grid_dict):
         old_grid = grid_df.copy()
         old_keys = list(old_grid.index.names)
-        old_grid = old_grid.reset_index()
+        old_idx = old_grid.index.to_frame()
 
-        added = []
         for key in grid_dict:
-            if key not in old_grid.columns:
-                added.append(key)
-                old_grid[key] = self.return_constant_params(key)
+            if key not in old_idx.columns:
+                old_idx[key] = self.return_constant_params(key)
 
-        return old_grid.set_index(old_keys + added)
+        val = old_grid.values
+        idx = pd.MultiIndex.from_arrays(old_idx.values.T, names=old_idx.columns)
+        updated = pd.DataFrame(val, index=idx, columns=old_grid.columns)
+
+        return updated
 
     def return_constant_params(self, key):
         """
 
         At this point, self should be loaded from a old record/storage
-        For the keys that are not in grid_dict, find the values from self.essentials[key]
+        For the keys that are not in grid_dict, find the values from ftransform.essentials[key]
 
         :param key:
         :return:
         """
         filepaths = self.__core.filepaths
+        param = self.f_transform_type().essentials[key]
 
-        param_lst = []
-        ih = IOHandler()
-        for ft_id in self.result_grid["f_transform_id"]:
-            f_transform = ih.load_obj_from_file(ft_id, "FTransform", filepaths)
-            param_lst.append(f_transform.essentials[key])
+        dh = DbHandler()
 
-        if len(set(param_lst)) > 1:
-            raise ValueError("Something seriously wrong with the design of the Scheme family")
-        else:
-            return param_lst[0]
+        checklst = []
+        for ft in self.result_grid["f_transform_id"]:
+            if isinstance(ft, ObjectId):
+                doc = dh.search_by_obj_id(ft, "FTransform", self.db)
+                checklst.append(doc["essentials"][key])
+        if [p for p in checklst if p != param]:
+            raise TypeError("Something very wrong in this package.")
+
+        return param
 
     @staticmethod
     def none_repeat_index(old, new):
-        idx = list(old.index.names)
-        old = old.index.to_frame().reset_index(drop=True)
-        new = new.index.to_frame().reset_index(drop=True)
+        old_ = old.copy()
+        old_["repeat"] = True
 
-        old["repeat"] = True
+        new_ = new.copy()
+        new_["non_repeat"] = old_["repeat"]
 
-        repeat = pd.merge(new, old, how="left", on=idx)
-        repeat = repeat.replace(np.nan, False).set_index(idx)
-
-        return np.logical_not(repeat["repeat"])
+        non_repeat_idx = new_["non_repeat"].isnull()
+        return non_repeat_idx
 
     def update_grid(self, pgrid=None, rgrid=None):
         if pgrid is not None:
@@ -247,14 +248,6 @@ class Scheme(Base):
     def layer(self):
         return self.__layer
 
-    # @property
-    # def lst_fed(self):
-    #     filepaths = self.__core.filepaths
-    #     lst_fed = self.__essentials["lst_fed"]
-    #
-    #     ih = IOHandler()
-    #     return [ih.load_obj_from_file(fid, "Feature", filepaths) for fid in lst_fed]
-
     @property
     def lst_fed(self):
         filepaths = self.__core.filepaths
@@ -275,6 +268,10 @@ class Scheme(Base):
     @property
     def evaluators(self):
         return self.__evaluators
+
+    @property
+    def f_transform_type(self):
+        return self.__f_transform_type
 
 
 class SimpleGridSearch(Scheme):
@@ -305,7 +302,7 @@ class SimpleGridSearch(Scheme):
         remain = list(
             self.performance_grid.loc[
                 self.performance_grid.isnull().sum(axis=1) != 0
-            ].index
+                ].index
         )
         if remain:
             return remain[0]
