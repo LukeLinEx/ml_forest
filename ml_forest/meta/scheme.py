@@ -1,5 +1,3 @@
-# from ml_forest.meta.scheme import SimpleGridSearch
-
 from bson.objectid import ObjectId
 import numpy as np
 import pandas as pd
@@ -51,9 +49,6 @@ class Scheme(Base):
         self.__layer = layer
         self.__evaluators = evaluators
         self.__result_grid, self.__performance_grid = self.create_grid(grid_dict)
-
-        # ih = IOHandler()
-        # self.__label = ih.load_obj_from_file(lnode.obj_id, "Label", core_docs.filepaths)
 
     def create_grid(self, grid_dict):
         frame_id = self.__core.frame
@@ -224,7 +219,6 @@ class Scheme(Base):
             self.__result_grid.loc[combination, "feature_id"] = feature.obj_id
             self.__result_grid.loc[combination, "f_transform_id"] = feature.essentials["f_transform"]
 
-            label = self.label
             for idx in fold_idx:
                 rows = frame.get_single_fold(idx)
                 f = feature.values[rows, :]
@@ -232,6 +226,8 @@ class Scheme(Base):
 
                 for evaluator in self.evaluators:
                     self.__performance_grid[(evaluator.__name__, idx)].loc[combination] = evaluator(f, l)
+
+            # TODO: self.save_f&ft_beyond_threshold(f, ft, threshold), this should be an abstract method
 
             self.update_scheme()
             combination = self.get_next()
