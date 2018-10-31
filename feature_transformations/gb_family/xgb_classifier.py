@@ -75,7 +75,7 @@ class XGBClassifierWithTuning(FTransform):
 
         for model in self.models.values():
             result.append(
-                model.predict(xg_test, ntree_limit=model.best_ntree_limit)
+                model.predict(xg_test, ntree_limit=model)
             )
         output = result[0]
         i = 1

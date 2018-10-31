@@ -113,7 +113,7 @@ class SklearnRegressor(SklearnModel):
             lst.append(model.predict(new_X))
 
         stacked_prediction = np.mean(lst, axis=0)
-        return stacked_prediction
+        return stacked_prediction.reshape(-1, 1)
 
 
 # TODO: Maybe somehow get the encoding dict to allow non-encoded labels

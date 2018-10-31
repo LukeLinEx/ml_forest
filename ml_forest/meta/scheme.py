@@ -222,7 +222,7 @@ class Scheme(Base):
             for idx in fold_idx:
                 rows = frame.get_single_fold(idx)
                 f = feature.values[rows, :]
-                l = label.values[rows]
+                l = label.values[rows, :]
 
                 for evaluator in self.evaluators:
                     self.__performance_grid[(evaluator.__name__, idx)].loc[combination] = evaluator(f, l)
