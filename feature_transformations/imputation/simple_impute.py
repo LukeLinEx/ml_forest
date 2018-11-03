@@ -1,5 +1,6 @@
 import warnings
 import numpy as np
+import pandas as pd
 from sklearn.exceptions import NotFittedError
 
 from ml_forest.core.elements.ftrans_base import FTransform
@@ -104,6 +105,68 @@ class SimpleNumImpute(FTransform):
     @property
     def indicate_impute(self):
         return self._indicate_impute
+
+
+class RandomImpute(FTransform):
+    def __init__(self):
+        super(RandomImpute, self).__init__(rise=0)
+        self.__essentials = {}
+        self.candidates = None
+
+    def fit_whole(self, x):
+        if len(x.shape) > 2:
+            raise ValueError("Not good for high dimension features.")
+        elif len(x.shape) == 2 and x.shape[1] != 1:
+            raise ValueError("Only good for a single feature for now.")
+
+        fval = pd.Series(x.ravel())
+        candidates = list(fval.loc[np.logical_not(fval.isnull())])
+        self.candidates = candidates
+
+        fval = self.transform(fval)
+
+        return fval
+
+    def transform(self, fed_test_value):
+        if not isinstance(fed_test_value, pd.Series):
+            fed_test_value = pd.Series(fed_test_value.ravel())
+        n = fed_test_value.loc[fed_test_value.isnull()].shape[0]
+
+        imputed_values = fed_test_value.copy()
+        imputed_values.loc[imputed_values.isnull()] = np.random.choice(self.candidates, size=n)
+        imputed_values = np.array(imputed_values).reshape(-1, 1)
+
+        return imputed_values
+
+
+class MeanImpute(FTransform):
+    def __init__(self):
+        super(MeanImpute, self).__init__(rise=0)
+        self.__essentials = {}
+        self.mean = None
+
+    def fit_whole(self, x):
+        if len(x.shape) > 2:
+            raise ValueError("Not good for high dimension features.")
+        elif len(x.shape) == 2 and x.shape[1] != 1:
+            raise ValueError("Only good for a single feature for now.")
+
+        fval = pd.Series(x.ravel())
+        self.mean = fval.mean()
+
+        fval = self.transform(fval)
+
+        return fval
+
+    def transform(self, fed_test_value):
+        if not isinstance(fed_test_value, pd.Series):
+            fed_test_value = pd.Series(fed_test_value.ravel())
+
+        imputed_values = fed_test_value.copy()
+        imputed_values.loc[imputed_values.isnull()] = self.mean
+        imputed_values = np.array(imputed_values).reshape(-1, 1)
+
+        return imputed_values
 
 
 if __name__ == "__main__":
