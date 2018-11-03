@@ -62,6 +62,7 @@ class PipeInit(object):
     def filepaths(self):
         return self.core.filepaths
 
+    # TODO: allow subset by a list of names
     @property
     def init_fnodes(self):
         return self._init_fnodes

@@ -38,18 +38,16 @@ class PipeTestData(Base):
             db = core.db
             filepaths = core.filepaths
 
-            self.ih = IOHandler()
-            self.dh = DbHandler()
-
             super(PipeTestData, self).__init__()
             self.__essentials = {"core_init": core.obj_id}
 
+            dh = DbHandler()
             self.test_features = {}
             self.__get_init_test_features(core, test_data)
             self.__label = PipeTestData.__get_label(core, test_data)
             if type(self) == PipeTestData:
                 self.save_db(db)
-                self.dh.insert_tag(self, {"tag": tag})
+                dh.insert_tag(self, {"tag": tag})
                 self.save_file(filepaths)
                 print(self.obj_id)
 
@@ -89,23 +87,27 @@ class PipeTestData(Base):
                 raise AttributeError(msg)
         oid = feature
 
+        ih = IOHandler()
+        dh = DbHandler()
+
         if self.test_feature_exists(oid):
             # load the obj and return values
             _id = self.test_features[oid]
-            test_feature = self.ih.load_obj_from_file(_id, "TestFeature", self.filepaths)
+            test_feature = ih.load_obj_from_file(_id, "TestFeature", self.filepaths)
             return test_feature.values
 
         else:
             # create the TestFeature and return values
-            f_doc = self.dh.search_by_obj_id(oid, element="Feature", db=self.db)
+            f_doc = dh.search_by_obj_id(oid, element="Feature", db=self.db)
             test_values = self.transform_test_data(f_doc)
             test_feature = TestFeature(self.obj_id, test_values)
             test_feature.save_db_file(self.db, self.filepaths)
 
             # record and save
             self.test_features[oid] = test_feature.obj_id
-            self.ih.save_obj2file(test_feature)
-            self.ih.save_obj2file(self)  # Does this work?
+            if update_file:
+                ih.save_obj2file(test_feature)
+                ih.save_obj2file(self)
 
             return test_feature.values
 
@@ -125,8 +127,9 @@ class PipeTestData(Base):
         else:
             test_fed_values = np.concatenate(lst_test_fed_values, axis=1)
 
+        ih = IOHandler()
         mid = f_doc["essentials"]["f_transform"]
-        ft = self.ih.load_obj_from_file(mid, element="FTransform", filepaths=self.filepaths)
+        ft = ih.load_obj_from_file(mid, element="FTransform", filepaths=self.filepaths)
         test_values = ft.transform(test_fed_values)
 
         return test_values

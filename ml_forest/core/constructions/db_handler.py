@@ -173,3 +173,11 @@ class DbHandler(object):
 
         result = target_collection.find_one(qry)
         return result
+
+    @staticmethod
+    def delete_by_lst_obj_id(lst_obj_id, element, db):
+        host = db["host"]
+        project = db["project"]
+        target_collection = connect_collection(host=host, database=project, collection=element)
+
+        target_collection.delete_many({"_id": {"$in": lst_obj_id}})

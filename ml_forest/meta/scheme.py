@@ -1,5 +1,4 @@
 from bson.objectid import ObjectId
-import numpy as np
 import pandas as pd
 
 from ml_forest.core.elements.identity import Base
@@ -11,6 +10,7 @@ from ml_forest.pipeline.links.knitor import Knitor
 
 
 # TODO: this is a temperary version. We need a thorough refactor
+# TODO: When a extended Scheme is scanned, we need to remove the old best performers who are no long in our best list
 class Scheme(Base):
     def __init__(self, layer, grid_dict, evaluators, core_docs, lst_fed, f_transform_type, lnode):
         """
@@ -129,7 +129,6 @@ class Scheme(Base):
 
     def insert_new_index(self, grid_df, grid_dict):
         old_grid = grid_df.copy()
-        old_keys = list(old_grid.index.names)
         old_idx = old_grid.index.to_frame()
 
         for key in grid_dict:
@@ -151,7 +150,6 @@ class Scheme(Base):
         :param key:
         :return:
         """
-        filepaths = self.__core.filepaths
         param = self.f_transform_type().essentials[key]
 
         dh = DbHandler()
@@ -185,7 +183,7 @@ class Scheme(Base):
             self.__result_grid = rgrid
 
     # Filling the trained result
-    def update_scheme(self):
+    def update_scheme_obj(self):
         ih = IOHandler()
         ih.save_obj2file(self)
 
@@ -195,10 +193,11 @@ class Scheme(Base):
     def get_next(self):
         raise NotImplementedError
 
-    def grid_scan(self):
+    def grid_scan(self, top_n=1, main_eval=None):
         if self.obj_id is None:
             raise ValueError(
                 "It seems you create a general Scheme object. Use a derived class that specifies a particular process.")
+
         names = self.performance_grid.index.names
         label = self.label
         lst_fed = self.lst_fed
@@ -208,6 +207,10 @@ class Scheme(Base):
         fold_idx = frame.create_structure(self.layer)
         combination = self.get_starter()
 
+        if main_eval is None:
+            main_eval = self.evaluators[0].__name__
+
+        best_performers = []
         while bool(combination):
             params = dict(zip(names, combination))
             f_transform = self.__f_transform_type(**params)
@@ -225,12 +228,28 @@ class Scheme(Base):
                 l = label.values[rows, :]
 
                 for evaluator in self.evaluators:
-                    self.__performance_grid[(evaluator.__name__, idx)].loc[combination] = evaluator(f, l)
+                    perf = evaluator(f, l)
+                    self.__performance_grid[(evaluator.__name__, idx)].loc[combination] = perf
+
+            avg_perf = self.__performance_grid[main_eval].loc[combination].mean()
+            best_performers.append([feature, f_transform, avg_perf])
+            best_performers = sorted(best_performers, key=lambda lst_: lst_[2])[:top_n]
 
             # TODO: self.save_f&ft_beyond_threshold(f, ft, threshold), this should be an abstract method
-
-            self.update_scheme()
             combination = self.get_next()
+
+        f_2b_saved = [lst[0] for lst in best_performers]
+        ft_2b_saved = [lst[1] for lst in best_performers]
+        for f in f_2b_saved:
+            if f.filepaths is None:
+                f.save_file(self.__core.filepaths)
+        for ft in ft_2b_saved:
+            if ft.filepaths is None:
+                ft.save_file(self.__core.filepaths)
+
+        self.update_scheme_obj()
+
+        return best_performers
 
     @property
     def label(self):
@@ -286,7 +305,7 @@ class SimpleGridSearch(Scheme):
                 self.__essentials
             except AttributeError:
                 self.__essentials = {}
-                self.update_scheme()
+                self.update_scheme_obj()
         else:
             self.__essentials = {}
             self.save_db_file(core_docs.db, core_docs.filepaths)

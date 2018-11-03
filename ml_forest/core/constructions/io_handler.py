@@ -1,3 +1,4 @@
+import os, subprocess
 from bson.objectid import ObjectId
 
 from ml_forest.core.utils.local_file_io import save_local, load_from_local
@@ -48,6 +49,25 @@ class IOHandler(object):
                 return load_from_local(local_path)
             else:
                 raise NotImplementedError("We need to implement the io for remote storage")
+
+    def rm_local_objs_of_a_class(self, lst_obj_id, obj_class, filepath):
+        dirpath = "/".join(filepath[key] for key in ["home", "project"])
+        dirpath = dirpath + "/" + obj_class
+
+        rmlst = {str(oid) + ".pkl" for oid in lst_obj_id}
+
+        lst_existing_fnames = subprocess.run(
+            ["ls", dirpath], stdout=subprocess.PIPE
+        ).stdout.decode().split("\n")
+        lst_existing_fnames = {f for f in lst_existing_fnames}
+
+        real_rmlst = rmlst.intersection(lst_existing_fnames)
+
+        cmd = ""
+        if real_rmlst:
+            cmd = "rm " + " ".join(real_rmlst)
+
+        os.system(cmd)
 
 
 if __name__ == "__main__":
