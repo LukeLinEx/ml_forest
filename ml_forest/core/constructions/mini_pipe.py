@@ -50,8 +50,8 @@ class FFlow(object):
                     frame, work_layer, fed_values, l_values, f_transform
                 )
 
-            # f_transform documenting
-            f_transform.record_models(model_collection)
+        # f_transform documenting
+        f_transform.record_models(model_collection)
 
         return new_feature_values, f_transform, stage
 
