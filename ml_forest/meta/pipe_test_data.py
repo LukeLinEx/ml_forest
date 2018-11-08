@@ -43,13 +43,14 @@ class PipeTestData(Base):
 
             dh = DbHandler()
             self.test_features = {}
+
+            self.save_db(db)
             self.__get_init_test_features(core, test_data)
             self.__label = PipeTestData.__get_label(core, test_data)
-            if type(self) == PipeTestData:
-                self.save_db(db)
-                dh.insert_tag(self, {"tag": tag})
-                self.save_file(filepaths)
-                print(self.obj_id)
+
+            dh.insert_tag(self, {"tag": tag})
+            self.save_file(filepaths)
+            print(self.obj_id)
 
     @staticmethod
     def decide_element():

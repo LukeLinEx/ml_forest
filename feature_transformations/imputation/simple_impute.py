@@ -125,7 +125,7 @@ class RandomImpute(FTransform):
 
         fval = self.transform(fval)
 
-        return fval
+        return None, fval
 
     def transform(self, fed_test_value):
         if not isinstance(fed_test_value, pd.Series):
@@ -156,7 +156,7 @@ class MeanImpute(FTransform):
 
         fval = self.transform(fval)
 
-        return fval
+        return None, fval
 
     def transform(self, fed_test_value):
         if not isinstance(fed_test_value, pd.Series):

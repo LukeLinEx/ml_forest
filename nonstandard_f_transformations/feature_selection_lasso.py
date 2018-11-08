@@ -5,11 +5,12 @@ from ml_forest.core.constructions.io_handler import IOHandler
 
 from ml_forest.pipeline.links.knitor import Knitor
 
+
 class FeatureSelectionLasso(FTransform):
     ih = IOHandler()
 
-    def __init__(self, ref_fnode, save_ref=True):
-        super(FeatureSelectionLasso, self).__init__(rise=0)
+    def __init__(self, ref_fnode, save_ref=True, rise=0):
+        super(FeatureSelectionLasso, self).__init__(rise=rise)
         self.__ref_id = ref_fnode.core.obj_id
 
         kn = Knitor()
@@ -38,8 +39,10 @@ class FeatureSelectionLasso(FTransform):
             if f.stage > stage:
                 stage = f.stage
             fed_values.append(f.values)
-        fed_values = np.concatenate(fed_values, axis=1)
 
+        stage = stage + self.rise
+
+        fed_values = np.concatenate(fed_values, axis=1)
         values = fed_values[:, self.__tobe_kept]
 
         return values, stage
