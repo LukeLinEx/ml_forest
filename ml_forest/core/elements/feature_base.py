@@ -54,17 +54,12 @@ class Feature(Base):
 
         super(Feature, self).__init__()
 
-        # TODO: an empty Feature (values is None, but all obj_id is essentials are there)
-        # TODO: might be created for searching. Therefore the trigger for the warning below needs to be reconsidered.
         # TODO: ref: stacking_node.FNode.get_docs_match_the_fnode
-        if not isinstance(values, np.ndarray):
+        if values is not None and not isinstance(values, np.ndarray):
             warnings.warn("A Feature whose values are not np.ndarray is created. Do you really want that?")
 
-
         self.__values = values
-
         self.__stage = None
-
         self.__essentials = {
             'frame': frame,
             'lst_fed': lst_fed,
