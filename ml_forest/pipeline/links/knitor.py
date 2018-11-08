@@ -76,8 +76,6 @@ class Knitor(object):
         return label, l_transform
 
     def f_subknit(self, f_node):
-        self.fnode_has_empty_ftransform(f_node)
-
         if not f_node.filepaths:
             if f_node.lst_fed:
                 for f in f_node.lst_fed:
@@ -90,6 +88,9 @@ class Knitor(object):
                 filepaths = doc["filepaths"]
                 obj_id = doc["_id"]
             else:
+                # TODO: Current f_materialize doesn't work with non-empty ftransform. Fix this and rm the next line
+                self.fnode_has_empty_ftransform(f_node)
+
                 filepaths = f_node.core.filepaths
 
                 feature, f_transform = self.fc.f_materialize(f_node, doc)
@@ -103,8 +104,6 @@ class Knitor(object):
                 f_node.obj_id = obj_id
 
     def f_knit(self, f_node):
-        self.fnode_has_empty_ftransform(f_node)
-
         if f_node.lst_fed:
             for f in f_node.lst_fed:
                 self.f_subknit(f)
@@ -117,6 +116,9 @@ class Knitor(object):
             f_transform_id = feature.essentials["f_transform"]
             f_transform = ih.load_obj_from_file(f_transform_id, "FTransform", f_node.filepaths)
         else:
+            # TODO: Current f_materialize doesn't work with non-empty ftransform. Fix this and rm the next line
+            self.fnode_has_empty_ftransform(f_node)
+
             doc = self.fc.collect_doc(f_node)
             feature, f_transform = self.fc.f_materialize(f_node, doc)
             if doc and "filepaths" in doc:
