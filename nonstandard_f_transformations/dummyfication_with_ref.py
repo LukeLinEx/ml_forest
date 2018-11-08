@@ -14,10 +14,10 @@ from feature_transformations.encoding.simple_dummy import SimpleDummy
 
 
 class DummyWithRef(FTransform):
-    def __init__(self, ref_id):
+    def __init__(self, ref_id, keep_missing=False):
         super(DummyWithRef, self).__init__(rise=0)
         self.__ref_id = ref_id
-        self.__essentials = {"ref_id": ref_id}
+        self.__essentials = {"ref_id": ref_id, "keep_missing": keep_missing}
         self._col_encoded = None
         self._all_classes = None
 
@@ -92,6 +92,9 @@ class DummyWithRef(FTransform):
 
         value = (fed_test_value.reshape(-1, 1) == np.array(self._col_encoded).reshape(1, -1)).astype(float)
 
-        value[unseen, :] = np.nan
+        if self.essentials["keep_missing"]:
+            value[unseen, :] = np.nan
+        else:
+            value[unseen, :] = 0
 
         return value

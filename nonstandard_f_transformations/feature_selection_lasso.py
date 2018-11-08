@@ -19,7 +19,7 @@ class FeatureSelectionLasso(FTransform):
         f, ft = kn.f_knit(ref_fnode)
 
         coefs_ = np.concatenate([mod.coef_.reshape(1, -1) for mod in ft.models.values()], axis=0)
-        majority_vote = np.mean(coefs_ > 0, axis=0)
+        majority_vote = np.mean(coefs_ != 0, axis=0)
         self.__tobe_kept = majority_vote >= 0.5
 
         ref_core = ref_fnode.core
