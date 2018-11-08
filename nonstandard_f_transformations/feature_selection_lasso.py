@@ -14,10 +14,9 @@ class FeatureSelectionLasso(FTransform):
         self.__ref_id = ref_fnode.core.obj_id
 
         kn = Knitor()
+        if save_ref:
+            kn.f_subknit(ref_fnode)
         f, ft = kn.f_knit(ref_fnode)
-        if save_ref and not ref_fnode.filepaths:
-            f.save_file(ref_fnode.core.filepaths)
-            ft.save_file(ref_fnode.core.filepaths)
 
         coefs_ = np.concatenate([mod.coef_.reshape(1, -1) for mod in ft.models.values()], axis=0)
         majority_vote = np.mean(coefs_ > 0, axis=0)
