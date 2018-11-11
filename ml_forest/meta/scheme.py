@@ -127,6 +127,20 @@ class Scheme(Base):
             rgrid=new_result_grid
         )
 
+    #     def insert_new_index(self, grid_df, grid_dict):
+    #         old_grid = grid_df.copy()
+    #         old_idx = old_grid.index.to_frame()
+
+    #         for key in grid_dict:
+    #             if key not in old_idx.columns:
+    #                 old_idx[key] = self.return_constant_params(key)
+
+    #         val = old_grid.values
+    #         idx = pd.MultiIndex.from_arrays(old_idx.values.T, names=old_idx.columns)
+    #         updated = pd.DataFrame(val, index=idx, columns=old_grid.columns)
+
+    #         return updated
+
     def insert_new_index(self, grid_df, grid_dict):
         old_grid = grid_df.copy()
         old_idx = old_grid.index.to_frame()
@@ -136,7 +150,9 @@ class Scheme(Base):
                 old_idx[key] = self.return_constant_params(key)
 
         val = old_grid.values
-        idx = pd.MultiIndex.from_arrays(old_idx.values.T, names=old_idx.columns)
+        names = old_idx.columns.tolist()
+        old_idx = old_idx.set_index(old_idx.columns.tolist(), drop=True)
+        idx = pd.MultiIndex.from_tuples(old_idx.index.tolist(), names=names)
         updated = pd.DataFrame(val, index=idx, columns=old_grid.columns)
 
         return updated
@@ -312,7 +328,7 @@ class SimpleGridSearch(Scheme):
 
     def get_starter(self):
         # change to list to prevent parameters casted to numpy.int64 which causes problems search in mongo
-        starter = list(self.performance_grid.index[0])
+        starter = list(self.performance_grid.index)[0]
         return starter
 
     def get_next(self):
@@ -325,3 +341,4 @@ class SimpleGridSearch(Scheme):
             return remain[0]
         else:
             return None
+
