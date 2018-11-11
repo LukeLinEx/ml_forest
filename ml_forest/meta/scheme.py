@@ -311,7 +311,9 @@ class SimpleGridSearch(Scheme):
             self.save_db_file(core_docs.db, core_docs.filepaths)
 
     def get_starter(self):
-        return self.performance_grid.index[0]
+        # change to list to prevent parameters casted to numpy.int64 which causes problems search in mongo
+        starter = list(self.performance_grid.index[0])
+        return starter
 
     def get_next(self):
         remain = list(

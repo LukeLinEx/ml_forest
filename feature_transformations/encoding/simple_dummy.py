@@ -49,6 +49,7 @@ class SimpleDummy(FTransform):
         return None, value
 
     def transform(self, fed_test_value):
+        # TODO: This might because in some fold a categorical feature has only unique value. Need to take care of that...
         if not bool(self._col_encoded):
             raise NotFittedError("The {} object is not fitted yet".format(str(type(self))))
 
@@ -68,7 +69,7 @@ class SimpleDummy(FTransform):
 
         value = (fed_test_value.reshape(-1, 1) == np.array(self._col_encoded).reshape(1, -1)).astype(float)
 
-        value[unseen, :] = np.nan
+        value[unseen, :] = 0 # TODO: consider using np.nan as well
 
         return value
 
