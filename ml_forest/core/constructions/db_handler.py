@@ -181,3 +181,14 @@ class DbHandler(object):
         target_collection = connect_collection(host=host, database=project, collection=element)
 
         target_collection.delete_many({"_id": {"$in": lst_obj_id}})
+
+    @staticmethod
+    def search_core_by_tag(tag, db):
+        host = db["host"]
+        project = db["project"]
+        target_collection = connect_collection(host=host, database=project, collection="CoreInit")
+
+        qry = {"tag": tag}
+
+        result = target_collection.find_one(qry)
+        return result
