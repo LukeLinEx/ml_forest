@@ -9,7 +9,7 @@ from ml_forest.core.constructions.db_handler import DbHandler
 
 from ml_forest.pipeline.nodes.stacking_node import FNode
 
-from ml_forest.meta.test_feature import TestFeature
+from meta.test_feature import TestFeature
 
 
 class PipeTestData(Base):
