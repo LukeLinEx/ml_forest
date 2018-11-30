@@ -9,11 +9,12 @@ ev_module_name = evaluators.__name__
 
 
 class PerformanceTrackor(object):
-    def __init__(self, evaluator, target):
+    def __init__(self, evaluator, target, label_id=None):
         """
 
         :param evaluator: an evaluating function from performance.evaluators
         :param target: PipeInit or PipeTestData
+        :label_id: ObjectId that represents the Label object. If None, the label in target would be used
         """
         if evaluator.__module__ != ev_module_name:
             raise TypeError("Only accept evaluators from {}".format(ev_module_name))
@@ -31,6 +32,10 @@ class PerformanceTrackor(object):
             self.target_id = target.obj_id
 
         self.target = target
+
+        self.label_id = None
+        if label_id:
+            self.label_id = label_id
 
     def search_performance(self, f, db=None):
         """
@@ -52,7 +57,9 @@ class PerformanceTrackor(object):
             performance_lst = doc["performance"]
             performance_docs = [
                 subdoc for subdoc in performance_lst
-                if subdoc["target"] == self.target_id and subdoc["ev_name"] == self.ev_name
+                if subdoc["target"] == self.target_id and
+                subdoc["ev_name"] == self.ev_name and
+                subdoc["label"] == self.label_id
                 ]
             if performance_docs:
                 performance = performance_docs[0]["score"]
@@ -60,8 +67,11 @@ class PerformanceTrackor(object):
         return performance
 
     def get_performance(self, fnode):
-        if self.target_type == "self":
-            ih = IOHandler()
+        ih = IOHandler()
+        if self.label_id:
+            label = ih.load_obj_from_file(self.label_id, "Label", self.target.filepaths)
+            lval = label.values
+        elif self.target_type == "self":
             label = ih.load_obj_from_file(self.target.label, "Label", self.target.filepaths)
             lval = label.values
         else:
@@ -74,11 +84,20 @@ class PerformanceTrackor(object):
         performance = self.evaluate_func(fval, lval)
         return performance
 
+    def get_label_id(self):
+        if self.label_id:
+            return self.label_id
+        else:
+            label_obj = self.target.label
+            if isinstance(label_obj, ObjectId):
+                return self.label_id
+            else:
+                return None
+
     def record_performance(self, f_id, perf):
-        """
-        """
         db = self.target.db
-        subdoc = {"target": self.target_id, "ev_name": self.ev_name, "score": perf}
+        label_id = self.get_label_id()
+        subdoc = {"target": self.target_id, "label": label_id, "ev_name": self.ev_name, "score": perf}
 
         dh = DbHandler()
         dh.insert_subdoc_by_id(f_id, "Feature", db, "performance", subdoc)
