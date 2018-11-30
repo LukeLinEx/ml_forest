@@ -146,6 +146,21 @@ class DbHandler(object):
         target_db.update_one({"_id": obj.obj_id}, qry, upsert=True)
 
     @staticmethod
+    def insert_subdoc_by_id(obj_id, element, db, field, subdoc):
+        if not isinstance(subdoc, dict):
+            raise TypeError("The new updating query should be encoded into a dictionary.")
+
+        if not isinstance(field, str):
+            raise ValueError("A field has to be a string")
+
+        target_db = connect_collection(db["host"], db["project"], element)
+
+        subdoc = deepcopy(subdoc)
+        qry = {"$push": {field: subdoc}}
+
+        target_db.update_one({"_id": obj_id}, qry, upsert=True)
+
+    @staticmethod
     def search_by_obj_id(obj_id, element, db):
         host = db["host"]
         project = db["project"]

@@ -39,8 +39,13 @@ class PerformanceTrackor(object):
         :param db: dict, indicates the database to search from.
                    Required if a Feature or an ObjectId is passed to f
         """
+        if isinstance(f, ObjectId):
+            f_id = f
+        else:
+            f_id = f.obj_id
+
         dh = DbHandler()
-        doc = dh.search_by_obj_id(f.obj_id, "Feature", db)
+        doc = dh.search_by_obj_id(f_id, "Feature", db)
 
         performance = None
         if "performance" in doc:
@@ -93,7 +98,6 @@ class PerformanceTrackor(object):
                   "f has to be a FNode"
             raise ValueError(msg)
         elif not perf:
-            print(perf)
             perf = self.get_performance(f)
             self.record_performance(f.obj_id, perf)
 
