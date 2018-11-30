@@ -210,9 +210,15 @@ class DbHandler(object):
 
     @staticmethod
     def search_core_by_tag(tag, db):
+        result = DbHandler.search_obj_by_tag(tag, "CoreInit", db)
+
+        return result
+
+    @staticmethod
+    def search_obj_by_tag(tag, element, db):
         host = db["host"]
         project = db["project"]
-        target_collection = connect_collection(host=host, database=project, collection="CoreInit")
+        target_collection = connect_collection(host=host, database=project, collection=element)
 
         qry = {"tag": tag}
 
