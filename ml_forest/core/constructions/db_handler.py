@@ -145,6 +145,17 @@ class DbHandler(object):
 
         target_db.update_one({"_id": obj.obj_id}, qry, upsert=True)
 
+    @staticmethod
+    def search_by_obj_id(obj_id, element, db):
+        host = db["host"]
+        project = db["project"]
+        target_collection = connect_collection(host=host, database=project, collection=element)
+
+        qry = {"_id": obj_id}
+
+        result = target_collection.find_one(qry)
+        return result
+
     def search_by_essentials(self, obj, db):
         host = db["host"]
         project = db["project"]
