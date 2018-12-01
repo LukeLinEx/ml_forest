@@ -45,27 +45,30 @@ class Piper(object):
             oid = feature.obj_id
             _id = self.pipe.test_features[oid]
             test_feature = self.ih.load_obj_from_file(_id, "TestFeature", self.pipe.filepaths)
-            return test_feature
         # If the test feature not saved yet
         else:
-            feature, f_transform, test_values = self.transform_test_data(feature)
+            f, f_transform, test_values = self.transform_test_data(feature)
             test_feature = TestFeature(self.pipe.obj_id, test_values)
 
             # Decide how to save the prediction (TestFeature)
             if save_prediction:
-                if not feature.filepaths:
-                    feature.save_file(self.pipe.filepaths)
+                if not f.filepaths:
+                    f.save_file(self.pipe.filepaths)
                 if not f_transform.filepaths:
                     f_transform.save_file(self.pipe.filepaths)
-                test_feature.save_db_file(self.pipe.db, self.pipe.filepaths)
+                if isinstance(feature, Feature) and not feature.filepaths:
+                    feature.save_file(self.pipe.filepaths)
+                if isinstance(feature, FNode) and not feature.filepaths:
+                    feature.filepaths = self.pipe.filepaths
 
+                test_feature.save_db_file(self.pipe.db, self.pipe.filepaths)
                 self.pipe.test_features[feature.obj_id] = test_feature.obj_id
 
-            # Update the PipeTestData object in the files
-            if update_pipe:
-                self.ih.save_obj2file(self.pipe)
+        # Update the PipeTestData object in the files
+        if update_pipe:
+            self.ih.save_obj2file(self.pipe)
 
-            return test_feature
+        return test_feature
 
     def collect_f_transform(self, feature):
         pass
@@ -99,7 +102,7 @@ class Piper(object):
         lst_test_fed_values = []
         lst_fed = [self.ih.load_obj_from_file(fid, "Feature", self.pipe.filepaths) for fid in lst_fed_oid]
         for fed in lst_fed:
-            fed_val = self.predict(fed, save_prediction=True, update_pipe=False)
+            fed_val = self.predict(fed, save_prediction=True, update_pipe=False).values
             lst_test_fed_values.append(fed_val)
 
         if len(lst_test_fed_values) == 1:
