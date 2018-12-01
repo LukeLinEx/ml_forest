@@ -97,8 +97,10 @@ class Piper(object):
             raise ValueError(msg)
 
         lst_test_fed_values = []
-        for fed_oid in lst_fed_oid:
-            lst_test_fed_values.append(self.predict(fed_oid, save_prediction=True, update_pipe=False))
+        lst_fed = [self.ih.load_obj_from_file(fid, "Feature", self.pipe.filepaths) for fid in lst_fed_oid]
+        for fed in lst_fed:
+            fed_val = self.predict(fed, save_prediction=True, update_pipe=False)
+            lst_test_fed_values.append(fed_val)
 
         if len(lst_test_fed_values) == 1:
             test_fed_values = lst_test_fed_values[0]
