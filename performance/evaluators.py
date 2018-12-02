@@ -15,6 +15,10 @@ class Evaluator(object):
     def __call__(self, fval, lval):
         raise NotImplementedError
 
+    @property
+    def name(self):
+        return type(self).__name__
+
 
 class RMSE(Evaluator):
     def __call__(self, fval, lval):
@@ -26,6 +30,7 @@ class RMSE(Evaluator):
         )
 
         return rmse_
+
 
 class LRMSE_pred_been_trans(Evaluator):
     def __init__(self, shift=0):
@@ -50,6 +55,7 @@ if __name__ == "__main__":
 
     evaluator = RMSE()
     print(type(evaluator).__name__)
+    print(evaluator.name)
     print(evaluator(a, b))
     print(evaluator(a, c))
 
@@ -58,5 +64,6 @@ if __name__ == "__main__":
     shift = 1
     evaluator = LRMSE_pred_been_trans(shift)
     print(type(evaluator).__name__)
+    print(evaluator.name)
     print(evaluator(np.log(a+shift), b))
     print(evaluator(a, c))

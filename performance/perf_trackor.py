@@ -3,24 +3,22 @@ from ml_forest.pipeline.nodes.stacking_node import FNode
 from ml_forest.core.constructions.db_handler import DbHandler
 from ml_forest.core.constructions.io_handler import IOHandler
 from ml_forest.pipeline.links.knitor import Knitor
-from performance import evaluators
-
-ev_module_name = evaluators.__name__
+from performance.evaluators import Evaluator, LRMSE_pred_been_trans
 
 
 class PerformanceTrackor(object):
     def __init__(self, evaluator, target, label_id=None):
         """
 
-        :param evaluator: an evaluating function from performance.evaluators
+        :param evaluator: Evaluator
         :param target: PipeInit or PipeTestData
-        :label_id: ObjectId that represents the Label object. If None, the label in target would be used
+        :param label_id: ObjectId that represents the Label object. If None, the label in target would be used
         """
-        if evaluator.__module__ != ev_module_name:
-            raise TypeError("Only accept evaluators from {}".format(ev_module_name))
+        if not isinstance(evaluator, Evaluator):
+            raise TypeError("Only accept performance.evaluators.Evaluator as the evaluator.")
 
-        self.ev_name = evaluator.__name__
-        self.evaluate_func = evaluator
+        self.ev_name = evaluator.name
+        self.ev_func = evaluator
 
         if not hasattr(target, "label"):
             raise AttributeError("The target doesn't have a label attribute for evaluation.")
@@ -56,10 +54,9 @@ class PerformanceTrackor(object):
         if "performance" in doc:
             performance_lst = doc["performance"]
             performance_docs = [
-                subdoc for subdoc in performance_lst
-                if subdoc["target"] == self.target_id and
-                subdoc["ev_name"] == self.ev_name and
-                subdoc["label"] == self.label_id
+                subdoc for subdoc in performance_lst if subdoc["target"] == self.target_id and
+                                                        subdoc["ev_name"] == self.ev_name and
+                                                        subdoc["label"] == self.label_id
                 ]
             if performance_docs:
                 performance = performance_docs[0]["score"]
@@ -81,7 +78,7 @@ class PerformanceTrackor(object):
         f, ft = kn.f_knit(fnode)
         fval = f.values
 
-        performance = self.evaluate_func(fval, lval)
+        performance = self.ev_func(fval, lval)
         return performance
 
     def get_label_id(self):
