@@ -1,7 +1,8 @@
 from bson.objectid import ObjectId
-from ml_forest.pipeline.nodes.stacking_node import FNode
+from ml_forest.core.constructions.core_init import CoreInit
 from ml_forest.core.constructions.db_handler import DbHandler
 from ml_forest.core.constructions.io_handler import IOHandler
+from ml_forest.pipeline.nodes.stacking_node import FNode
 from ml_forest.pipeline.links.knitor import Knitor
 from performance.evaluators import Evaluator
 from test_data.constructions.piper import Piper
@@ -12,7 +13,7 @@ class PerformanceTrackor(object):
         """
 
         :param evaluator: Evaluator
-        :param target: PipeInit or PipeTestData
+        :param target: PipeInit/CoreInit or PipeTestData
         :param label_id: ObjectId that represents the Label object. If None, the label in target would be used
         """
         if not isinstance(evaluator, Evaluator):
@@ -25,7 +26,10 @@ class PerformanceTrackor(object):
             raise AttributeError("The target doesn't have a label attribute for evaluation.")
         if isinstance(target.label, ObjectId):
             self.target_type = "self"
-            self.target_id = target.core.obj_id
+            if isinstance(target, CoreInit):
+                self.target_id = target.obj_id
+            else:
+                self.target_id = target.core.obj_id
         else:
             self.target_type = "test"
             self.target_id = target.obj_id
