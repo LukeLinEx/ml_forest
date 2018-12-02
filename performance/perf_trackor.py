@@ -35,23 +35,18 @@ class PerformanceTrackor(object):
         if label_id:
             self.label_id = label_id
 
-    def search_performance(self, f, db=None):
+    def search_performance(self, fid, db=None):
         """
 
-        :param f: Feature, FNode or ObjectId, from where obj_id to search is obtained
+        :param f: ObjectId
         :param db: dict, indicates the database to search from.
                    Required if a Feature or an ObjectId is passed to f
         """
-        if isinstance(f, ObjectId):
-            f_id = f
-        else:
-            f_id = f.obj_id
-
         dh = DbHandler()
-        doc = dh.search_by_obj_id(f_id, "Feature", db)
+        doc = dh.search_by_obj_id(fid, "Feature", db)
 
         performance = None
-        if "performance" in doc:
+        if doc and "performance" in doc:
             performance_lst = doc["performance"]
             performance_docs = [
                 subdoc for subdoc in performance_lst if subdoc["target"] == self.target_id and
@@ -63,7 +58,7 @@ class PerformanceTrackor(object):
 
         return performance
 
-    def get_performance(self, fnode):
+    def get_performance(self, fval):
         ih = IOHandler()
         if self.label_id:
             label = ih.load_obj_from_file(self.label_id, "Label", self.target.filepaths)
@@ -73,10 +68,6 @@ class PerformanceTrackor(object):
             lval = label.values
         else:
             lval = self.target.label
-
-        kn = Knitor()
-        f, ft = kn.f_knit(fnode)
-        fval = f.values
 
         performance = self.ev_func(fval, lval)
         return performance
@@ -100,6 +91,12 @@ class PerformanceTrackor(object):
         dh.insert_subdoc_by_id(f_id, "Feature", db, "performance", subdoc)
 
     def output_performance(self, f, core=None):
+        """
+
+        :param f: Feature, FNode or ObjectId, from where obj_id to search is obtained
+        :param core:
+        :return:
+        """
         if not core and not isinstance(f, FNode):
             raise TypeError("If core is not provided, f has to be of FNode type")
         elif isinstance(f, FNode):
@@ -107,14 +104,30 @@ class PerformanceTrackor(object):
         else:
             db = core.db
 
-        perf = self.search_performance(f, db)
+        if isinstance(f, ObjectId):
+            f_id = f
+        elif isinstance(f, FNode):
+            kn = Knitor()
+            feature, _ = kn.f_knit(f)
+            f_id = feature.obj_id
+        else:
+            try:
+                f_id = f.obj_id
+                if not f_id:
+                    raise AttributeError("f has empty obj_id, can't search the Feature.")
+            except AttributeError:
+                raise AttributeError("f doesn't have the obj_id attribute for searching the Feature object.")
 
-        if not perf and not isinstance(f, FNode):
-            msg = "The performance was not found from the db. To create the Feature, " + \
-                  "f has to be a FNode"
-            raise ValueError(msg)
-        elif not perf:
-            perf = self.get_performance(f)
+        perf = self.search_performance(f_id, db)
+
+        if not perf:
+            try:
+                fval = feature.values
+            except NameError:
+                msg = "The performance was not found from the db. To create the Feature, " + \
+                              "f has to be a FNode"
+                raise ValueError(msg)
+
+            perf = self.get_performance(fval)
             self.record_performance(f.obj_id, perf)
-
         return perf
