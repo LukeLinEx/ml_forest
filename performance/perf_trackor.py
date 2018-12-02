@@ -3,7 +3,7 @@ from ml_forest.pipeline.nodes.stacking_node import FNode
 from ml_forest.core.constructions.db_handler import DbHandler
 from ml_forest.core.constructions.io_handler import IOHandler
 from ml_forest.pipeline.links.knitor import Knitor
-from performance.evaluators import Evaluator, LRMSE_pred_been_trans
+from performance.evaluators import Evaluator
 
 
 class PerformanceTrackor(object):
@@ -108,8 +108,10 @@ class PerformanceTrackor(object):
             f_id = f
         elif isinstance(f, FNode):
             kn = Knitor()
-            feature, _ = kn.f_knit(f)
-            f_id = feature.obj_id
+            pred, _ = kn.f_knit(f)
+            f_id = pred.obj_id
+            if self.target_type == "test":
+                pred = self.target.predict(f)
         else:
             try:
                 f_id = f.obj_id
@@ -122,7 +124,7 @@ class PerformanceTrackor(object):
 
         if not perf:
             try:
-                fval = feature.values
+                fval = pred.values
             except NameError:
                 msg = "The performance was not found from the db. To create the Feature, " + \
                               "f has to be a FNode"
