@@ -4,6 +4,7 @@ from ml_forest.core.constructions.db_handler import DbHandler
 from ml_forest.core.constructions.io_handler import IOHandler
 from ml_forest.pipeline.links.knitor import Knitor
 from performance.evaluators import Evaluator
+from test_data.constructions.piper import Piper
 
 
 class PerformanceTrackor(object):
@@ -38,7 +39,7 @@ class PerformanceTrackor(object):
     def search_performance(self, fid, db=None):
         """
 
-        :param f: ObjectId
+        :param fid: ObjectId
         :param db: dict, indicates the database to search from.
                    Required if a Feature or an ObjectId is passed to f
         """
@@ -111,7 +112,7 @@ class PerformanceTrackor(object):
             pred, _ = kn.f_knit(f)
             f_id = pred.obj_id
             if self.target_type == "test":
-                pred = self.target.predict(f)
+                pred = Piper(self.target).predict(f)
         else:
             try:
                 f_id = f.obj_id
