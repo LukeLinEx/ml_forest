@@ -41,7 +41,6 @@ class Piper(object):
             fid = fnode.obj_id
         # If the test feature not saved yet
         else:
-            print("Build the test feature")
             if not fnode.lst_fed:
                 msg = "Are you extrating test features for some initializing features? Those should" + \
                       "be generated in the PipeTestData.__init__, so you might have problem with __init__."
@@ -52,9 +51,11 @@ class Piper(object):
             fid = feature.obj_id
 
             if self.test_feature_exists(fid):
+                print("Get the test feature from storage.")
                 _id = self.pipe.test_features[fid]
                 test_feature = self.ih.load_obj_from_file(_id, "TestFeature", self.pipe.filepaths)
             else:
+                print("Build the test feature")
                 lst_fed_oid = feature.essentials["lst_fed"]
                 test_fed_values = self.get_test_fed_values(lst_fed_oid)
                 test_values = f_transform.transform(test_fed_values)

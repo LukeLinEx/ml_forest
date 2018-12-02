@@ -47,8 +47,6 @@ class LRMSE_pred_been_trans(Evaluator):
 
 
 if __name__ == "__main__":
-    import numpy as np
-
     a = np.array([1,2,3])
     b = np.array([1,2,3])
     c = np.array([3,2,1])
