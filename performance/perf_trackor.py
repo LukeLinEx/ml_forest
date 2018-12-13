@@ -40,7 +40,7 @@ class PerformanceTrackor(object):
         if label_id:
             self.label_id = label_id
 
-    def search_performance(self, fid, db=None):
+    def search_performance_by_id(self, fid, db=None):
         """
 
         :param fid: ObjectId
@@ -95,7 +95,7 @@ class PerformanceTrackor(object):
         dh = DbHandler()
         dh.insert_subdoc_by_id(f_id, "Feature", db, "performance", subdoc)
 
-    def output_performance(self, f, core=None):
+    def search_performance(self, f, core=None):
         """
 
         :param f: Feature, FNode or ObjectId, from where obj_id to search is obtained
@@ -113,10 +113,11 @@ class PerformanceTrackor(object):
             f_id = f
         elif isinstance(f, FNode):
             kn = Knitor()
-            pred, _ = kn.f_knit(f)
-            f_id = pred.obj_id
-            if self.target_type == "test":
-                pred = Piper(self.target).predict(f)
+            doc = kn.fc.collect_doc(f)
+            if doc is not None:
+                f_id = doc["_id"]
+            else:
+                f_id = None
         else:
             try:
                 f_id = f.obj_id
@@ -125,16 +126,25 @@ class PerformanceTrackor(object):
             except AttributeError:
                 raise AttributeError("f doesn't have the obj_id attribute for searching the Feature object.")
 
-        perf = self.search_performance(f_id, db)
+        perf = self.search_performance_by_id(f_id, db)
 
-        if not perf:
-            try:
-                fval = pred.values
-            except NameError:
-                msg = "The performance was not found from the db. To create the Feature, " + \
-                              "f has to be a FNode"
-                raise ValueError(msg)
-
-            perf = self.get_performance(fval)
-            self.record_performance(f.obj_id, perf)
         return perf
+
+    def obtain_performance(self, f):
+        if not isinstance(f, FNode):
+            msg = "To obtain the Feature for evaluation, f has to be a FNode"
+            raise ValueError(msg)
+
+        if self.target_type == "test":
+            pred = Piper(self.target).predict(f)
+            f_id = f.obj_id
+        else:
+            kn = Knitor()
+            pred, _ = kn.f_knit(f)
+            f_id = pred.obj_id
+
+        fval = pred.values
+        perf = self.get_performance(fval)
+        self.record_performance(f.obj_id, perf)
+
+        return self.ev_name, self.target_id, perf, f_id
