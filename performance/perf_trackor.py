@@ -128,7 +128,7 @@ class PerformanceTrackor(object):
 
         perf = self.search_performance_by_id(f_id, db)
 
-        return perf
+        return self.ev_name, self.target_id, perf, f_id
 
     def obtain_performance(self, f):
         if not isinstance(f, FNode):
@@ -138,13 +138,16 @@ class PerformanceTrackor(object):
         if self.target_type == "test":
             pred = Piper(self.target).predict(f)
             f_id = f.obj_id
+            feature = None
+            f_transform = None
         else:
             kn = Knitor()
-            pred, _ = kn.f_knit(f)
+            pred, f_transform = kn.f_knit(f)
             f_id = pred.obj_id
+            feature = pred
 
         fval = pred.values
         perf = self.get_performance(fval)
         self.record_performance(f.obj_id, perf)
 
-        return self.ev_name, self.target_id, perf, f_id
+        return self.ev_name, self.target_id, perf, f_id, feature, f_transform
