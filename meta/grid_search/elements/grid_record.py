@@ -40,7 +40,7 @@ class GridRecord(Base):
         self.__core = core_docs
         self.__evaluator = evaluator
         self.__result_grid, self.__performance_grid = None, None
-        self.__lst_params = []
+        self.__lst_params = [] # TODO: myabe redundent
         self.__layer = layer
 
     @staticmethod
