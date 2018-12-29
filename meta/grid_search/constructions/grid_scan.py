@@ -227,10 +227,10 @@ class GridScan(object):
         f_2b_saved = [lst[0] for lst in best_performers]
         ft_2b_saved = [lst[1] for lst in best_performers]
         for f in f_2b_saved:
-            if f is not None and f.filepaths is None:
+            if f is not None and not f.filepaths:
                 f.save_file(core.filepaths)
         for ft in ft_2b_saved:
-            if ft is not None and ft.filepaths is None:
+            if ft is not None and not ft.filepaths:
                 ft.save_file(core.filepaths)
 
         self.grid_record.update_performance_grid(p_grid)
