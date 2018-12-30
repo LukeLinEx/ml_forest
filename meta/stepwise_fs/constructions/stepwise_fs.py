@@ -1,26 +1,21 @@
 from copy import deepcopy
 import numpy as np
 from warnings import warn
-from ml_forest.core.constructions.db_handler import DbHandler
-from ml_forest.core.constructions.io_handler import IOHandler
 
-from ml_forest.pipeline.nodes.stacking_node import FNode, LNode
-from ml_forest.pipeline.links.knitor import Knitor
+from ml_forest.pipeline.nodes.stacking_node import FNode
 
 from performance.perf_trackor import PerformanceTrackor
 from meta.stepwise_fs.elements.sfs_record import SFSRecord
+from meta.meta import Meta
 
 
 # TODO: if Feature and FTransform were not split into two classes, do I have problem here?
-class StepwiseFeatureSelection(object):
+class StepwiseFeatureSelection(Meta):
     def __init__(
             self, evaluator, core_docs, lst_fed, f_transform_type, lnode, target=None, layer=None,
             omit_old=False, keep_untouched=None, **kwargs
     ):
-        self.dh = DbHandler()
-        self.ih = IOHandler()
-        self.db = core_docs.db
-        self.filepaths = core_docs.filepaths
+        super(StepwiseFeatureSelection, self).__init__(core_docs)
 
         # TODO: should check if keep_untouched is in the sfs_record.result already. Warn if not.
         if not keep_untouched:
@@ -36,18 +31,9 @@ class StepwiseFeatureSelection(object):
             msg = "The f_transform_type got an unexpected keyword argument {}".format(bad_arg)
             raise TypeError(msg)
 
-        # TODO: this should go beyond and shared by all meta
-        print("Getting FNodes & LNode ready, can take some time...")
-        lst_fed, layer = self.get_features_ready(lst_fed, core_docs, layer)
+        self.lst_fed, self.lnode, layer = self.get_nodes_ready(lst_fed, core_docs, layer, lnode)
         self.__layer = layer
-        lnode = self.get_label_ready(lnode)
-
-        self.lst_fed = lst_fed
-        self.lnode = lnode
-        print("Nodes are ready.")
-
-        if not target:
-            target = core_docs
+        target = self.get_target_ready(target, core_docs)
         self.target = target
 
         # find old sfs if any, then update the candidate
@@ -66,15 +52,28 @@ class StepwiseFeatureSelection(object):
         self.sfs_record = sfs_record
         self.best_performers = []
 
+    def get_best_performers(self, lst_docs, sign, ev_name, top_n):
+        obp = sorted(lst_docs, key=lambda doc_: sign * doc_[ev_name])[:top_n]
+        obp = deepcopy(obp)
+
+        return obp
+
+    def get_lst_included(self, best_performers):
+        if best_performers:
+            lst_included = [doc["included"] for doc in best_performers]
+        else:
+            lst_included = []
+
+        return lst_included
+
     def stepwise_search(
             self, num_try_b4_stop, num_test_each_step, top_n=1, minimize=True, update_increment=30
     ):
         all_candidates = self.sfs_record.all_candidates
 
-        sign = (-1) ** (minimize + 1)
+        sign = self.get_sign(minimize)
         ev_name = self.sfs_record.evaluator.name
-        tmp = sorted(self.sfs_record.result, key=lambda doc_: sign * doc_[ev_name])[:top_n]
-        best_performers = deepcopy(tmp)
+        best_performers = self.get_best_performers(self.sfs_record.result, sign, ev_name, top_n)
 
         for doc in best_performers:
             doc["feature"] = None
@@ -88,7 +87,7 @@ class StepwiseFeatureSelection(object):
             testing_features = set(testing_features)
 
             best_performers = self.searching_within_a_step(
-                all_candidates, testing_features, best_performers, top_n, minimize)
+                all_candidates, testing_features, best_performers, top_n, sign)
 
             new_lst_included = self.get_lst_included(best_performers)
             if lst_included == new_lst_included:
@@ -106,16 +105,7 @@ class StepwiseFeatureSelection(object):
         print("last update")
         self.update_sfs_record(best_performers)
 
-    def get_lst_included(self, best_performers):
-        if best_performers:
-            lst_included = [doc["included"] for doc in best_performers]
-        else:
-            lst_included = []
-
-        return lst_included
-
-    def searching_within_a_step(self, num2fnodes, testing_features, best_performers, top_n, minimize):
-        db = self.db
+    def searching_within_a_step(self, num2fnodes, testing_features, best_performers, top_n, sign):
         evaluator = self.sfs_record.evaluator
         ev_name = evaluator.name
         core = self.sfs_record.core
@@ -131,7 +121,6 @@ class StepwiseFeatureSelection(object):
             included = set()
 
         pt = PerformanceTrackor(evaluator, target)
-
         for n in testing_features:
             if n in self.keep_untouched:
                 continue
@@ -152,27 +141,17 @@ class StepwiseFeatureSelection(object):
             testing_fed = [FNode(core, obj_id=f_id, filepaths=core.filepaths) for f_id in testing_fed_id]
             f_transform = f_transform_type(**params)
 
-            # TODO: vvv go to upper level and shared by all meta
             f_node = FNode(core, testing_fed, f_transform, lnode)
+            perf, f_id, ft_id, feature, f_transform = self.evaluate(f_node, pt)
 
-            _, _, perf, f_id = pt.search_performance(f_node)
-            feature = None
-            f_transform = None
-            if not perf:
-                _, _, perf, f_id, feature, f_transform = pt.obtain_performance(f_node)
-
-            doc = self.dh.search_by_obj_id(f_id, "Feature", db)
-            ft_id = doc["essentials"]["f_transform"]
-            # TODO: ^^^ go to upper level and shared by all meta
-
+            # updating relevant records
             result_doc = {"included": testing, ev_name: perf, "feature_id": f_id, "f_transform_id": ft_id}
             self.sfs_record.update_result(result_doc)
-
             result_doc["feature"] = feature
             result_doc["f_transform"] = f_transform
-            sign = (-1) ** (minimize + 1)
+
             best_performers.append(result_doc)
-            best_performers = sorted(best_performers, key=lambda doc_: sign * doc_[ev_name])[:top_n]
+            best_performers = self.get_best_performers(best_performers, sign, ev_name, top_n)
 
         return best_performers
 
@@ -203,41 +182,6 @@ class StepwiseFeatureSelection(object):
         else:
             return None
 
-    @staticmethod
-    def get_features_ready(lst_fed, core_docs, layer):
-        filepaths = core_docs.filepaths
-
-        kn = Knitor()
-        for fed in lst_fed:
-            if not isinstance(fed, FNode):
-                raise TypeError("Only takes FNode as an input variable.")
-            if not fed.obj_id or not fed.filepaths:
-                kn.f_subknit(fed)
-
-        lst_fed_id = [f.obj_id for f in lst_fed]
-
-        if not layer:
-            ih = IOHandler()
-            current_stage = max(ih.load_obj_from_file(fid, "Feature", filepaths).stage for fid in lst_fed_id)
-            depth = ih.load_obj_from_file(core_docs.frame, "Frame", filepaths).depth
-            layer = depth - current_stage
-
-            if layer < 0:
-                raise ValueError(
-                    "Negative value is not possible. Check if there is mismatch between lst_fed and core_docs")
-
-        return lst_fed, layer
-
-    @staticmethod
-    def get_label_ready(lnode):
-        if not isinstance(lnode, LNode):
-            raise TypeError("Only takes LNode as an output variable.")
-        if not lnode.obj_id or not lnode.filepaths:
-            kn = Knitor()
-            kn.l_subknit(lnode)
-
-        return lnode
-
     def update_sfs_record(self, best_performers=None, save_best=True):
         core = self.sfs_record.core
         sfs_record = self.sfs_record
@@ -250,11 +194,18 @@ class StepwiseFeatureSelection(object):
             sfs_record.save_db_file(db, filepaths)
 
         if save_best:
-            f_2b_saved = [doc["feature"] for doc in best_performers]
-            ft_2b_saved = [doc["f_transform"] for doc in best_performers]
-            for f in f_2b_saved:
-                if f is not None and not f.filepaths:
-                    f.save_file(core.filepaths)
-            for ft in ft_2b_saved:
-                if ft is not None and not ft.filepaths:
-                    ft.save_file(core.filepaths)
+            self.save_best_performers2files(best_performers, core)
+
+    def save_best_performers2files(self, best_performers, core):
+        if not best_performers:
+            msg = "The NoneType best_performers can't be saved."
+            raise TypeError(msg)
+
+        f_2b_saved = [doc["feature"] for doc in best_performers]
+        ft_2b_saved = [doc["f_transform"] for doc in best_performers]
+        for f in f_2b_saved:
+            if f is not None and not f.filepaths:
+                f.save_file(core.filepaths)
+        for ft in ft_2b_saved:
+            if ft is not None and not ft.filepaths:
+                ft.save_file(core.filepaths)
