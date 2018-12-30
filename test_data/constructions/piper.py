@@ -106,7 +106,8 @@ class Piper(object):
         lst_test_fed_values = []
         lst_fed = [self.ih.load_obj_from_file(fid, "Feature", self.pipe.filepaths) for fid in lst_fed_oid]
         for fed in lst_fed:
-            fed_val = self.predict(fed, save_prediction=True, update_pipe=False).values
+            test_fed, _, _ = self.predict(fed, save_prediction=True, update_pipe=False)
+            fed_val = test_fed.values
             lst_test_fed_values.append(fed_val)
 
         if len(lst_test_fed_values) == 1:
@@ -150,4 +151,4 @@ class Piper(object):
         if update_pipe:
             self.ih.save_obj2file(self.pipe)
 
-        return test_feature
+        return test_feature, feature, f_transform

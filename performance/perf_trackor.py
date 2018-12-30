@@ -136,10 +136,8 @@ class PerformanceTrackor(object):
             raise ValueError(msg)
 
         if self.target_type == "test":
-            pred = Piper(self.target).predict(f)
+            pred, feature, f_transform = Piper(self.target).predict(f)
             f_id = f.obj_id
-            feature = None
-            f_transform = None
         else:
             kn = Knitor()
             pred, f_transform = kn.f_knit(f)

@@ -160,7 +160,7 @@ class GridScan(object):
     def save_grid(self):
         self.grid_record.save_db_file(self.db, self.filepaths)
 
-    def update_scheme_obj(self):
+    def update_grid_record(self):
         grid_record = self.grid_record
         db = grid_record.core.db
         filepaths = grid_record.core.filepaths
@@ -178,7 +178,7 @@ class GridScan(object):
         else:
             return None
 
-    def grid_scan(self, top_n=1, minimize=True):
+    def grid_scan(self, top_n=1, minimize=True, update_increment=30):
         f_transform_type = self.grid_record.f_transform_type
         core = self.grid_record.core
         evaluator = self.grid_record.evaluator
@@ -187,7 +187,6 @@ class GridScan(object):
 
         lst_fed = self.lst_fed
         lnode = self.lnode
-        # kn = Knitor()
 
         p_grid = self.grid_record.performance_grid.copy()
         r_grid = self.grid_record.result_grid.copy()
@@ -199,6 +198,7 @@ class GridScan(object):
         best_performers = []
         pt = PerformanceTrackor(evaluator, target)
 
+        j = 0
         while bool(combination):
             params = dict(zip(param_names, combination))
             f_transform = f_transform_type(**params)
@@ -208,7 +208,10 @@ class GridScan(object):
             feature = None
             f_transform = None
             if not perf:
+                print("Obtain new perf")
                 _, _, perf, f_id, feature, f_transform = pt.obtain_performance(f_node)
+                print(feature)
+                print(f_transform)
 
             doc = self.dh.search_by_obj_id(f_id, "Feature", db)
             ft_id = doc["essentials"]["f_transform"]
@@ -224,6 +227,14 @@ class GridScan(object):
 
             combination = self.get_next(p_grid)
 
+            j+=1
+            if j % update_increment == 0:
+                print("update")
+                self.grid_record.update_performance_grid(p_grid)
+                self.grid_record.update_result_grid(r_grid)
+                self.update_grid_record()
+
+
         f_2b_saved = [lst[0] for lst in best_performers]
         ft_2b_saved = [lst[1] for lst in best_performers]
         for f in f_2b_saved:
@@ -235,7 +246,7 @@ class GridScan(object):
 
         self.grid_record.update_performance_grid(p_grid)
         self.grid_record.update_result_grid(r_grid)
-        self.update_scheme_obj()
+        self.update_grid_record()
 
         self.best_f_id = [f_id for _, _, _, f_id in best_performers]
 
