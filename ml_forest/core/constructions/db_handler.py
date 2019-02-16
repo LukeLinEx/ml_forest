@@ -38,11 +38,13 @@ class DbHandler(object):
 
         return resulted_doc
 
-    def init_doc(self, obj):
+    def init_doc(self, obj, update_dict=True):
         """
         The "essentials" attribute of an obj would be used to identify the obj from the db.
 
         :param obj:
+        :param update_dict: bool. If the training is documented in a dictionary locally, this allow users to decide
+                                  if the pickled documents are to be updated in this function call.
         :return:
         """
         try:
@@ -61,11 +63,20 @@ class DbHandler(object):
 
         db_location = obj.db
         element = obj.decide_element()
-        target_db = connect_collection(
-            db_location["host"], db_location["project"], element
-        )
-        doc_created = target_db.insert_one(document)
-        return doc_created.inserted_id
+        host = db_location["host"]
+        project = db_location["project"]
+
+        # TODO: This chunk!!!
+        if host != "dictionary":
+            target_db = connect_collection(host, project, element)
+            doc_created = target_db.insert_one(document)
+            inserted_id = doc_created.inserted_id
+        else:
+            inserted_id = 1+1
+            if update_dict:
+                pass
+
+        return inserted_id
 
     @staticmethod
     def insert_tag(obj, doc):
