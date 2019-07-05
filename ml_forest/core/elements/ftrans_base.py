@@ -11,13 +11,11 @@ __author__ = 'LukeLin'
 class FTransform(Base):
     def __init__(self, rise, tuning=False):
         """
-
         :param rise: int, indicates how many stages (see feature_base) to rise:
                           unsupervised learning: 0
                           supervised learning: 1
                           supervised learning with tuning: 1
         :param tuning: boolean, if tuning is happening in the training folds
-
         rise and tuning are fixed for a FTransform class, so they are not saved in essentials since type is
         """
         super(FTransform, self).__init__()
@@ -63,24 +61,35 @@ class FTransWithPreTrainedModels(FTransform):
 
 
 class SklearnModel(FTransform):
-    def __init__(self, model_type, **kwargs):
+    def __init__(self, model_type, rise, tuning, **kwargs):
         """
-
-        :param model_type:
-        :param kwargs: rise and tuning
+        :param model_type: sklearn model type
+        :param rise: whether go to the next stage or not (see Feature class)
+        :param tuning: if tuning is part of the sklearn model
+        :param kwargs:
         """
-        super(SklearnModel, self).__init__(**kwargs)
+        super(SklearnModel, self).__init__(rise=rise, tuning=tuning)
         self.__model_type = model_type
 
-        self.__essentials = {}
+        params = model_type().get_params()
+        self.__essentials = deepcopy(params)
+        kwargs = locals()["kwargs"]
+        for key in kwargs:
+            if key in self.__essentials:
+                self.__essentials[key] = kwargs[key]
 
-    def fit_singleton(self, x, y, new_x):
+    def prepare_model(self):
         model = self.__model_type()
         for key in model.get_params():
             if key in self.essentials:
                 model.set_params(**{key: self.essentials[key]})
 
-        if len(y.shape) > 1 and y.shape[1]==1:
+        return model
+
+    def fit_singleton(self, x, y, new_x):
+        model = self.prepare_model()
+
+        if len(y.shape) > 1 and y.shape[1] == 1:
             y = y.ravel()
         model.fit(x, y)
 
@@ -93,18 +102,45 @@ class SklearnModel(FTransform):
                 values = values.reshape(-1, 1)
             return model, values
 
+    def fit_whole(self, x):
+        model = self.prepare_model()
+        value = model.fit_transform(x)
+
+        return model, value
+
     def transform(self, new_X):
         raise NotImplementedError()
 
 
-class SklearnRegressor(SklearnModel):
-    def __init__(self, model_type, **kwargs):
+class SklearnUnsupervised(SklearnModel):
+    def __init__(self, model_type, rise=0, **kwargs):
         """
+        :param model_type: sklearn model type
+        :param rise: for unsupervised learning, rise=0 by default
+        :param kwargs:
+        """
+        super(SklearnUnsupervised, self).__init__(model_type, rise=rise, tuning=False, **kwargs)
+        self.__essentials = {}
 
-                :param model_type:
-                :param kwargs: rise and tuning
-                """
-        super(SklearnRegressor, self).__init__(model_type, **kwargs)
+    def transform(self, new_X):
+        if len(self.models) > 0:
+            warnings.warn("Most likely an unsupervised method returns only one model. Your has more.")
+
+        model = self.models[(0,)]
+        value = model.transform(new_X)
+
+        return value
+
+
+class SklearnRegressor(SklearnModel):
+    def __init__(self, model_type, rise=1, tuning=False, **kwargs):
+        """
+        :param model_type: sklearn model type
+        :param rise: for a supervised learning, rise > 0
+        :param tuning: whether tuning is part of the model
+        :param kwargs:
+        """
+        super(SklearnRegressor, self).__init__(model_type, rise=rise, tuning=tuning, **kwargs)
         self.__essentials = {}
 
     def transform(self, new_X):
@@ -118,13 +154,14 @@ class SklearnRegressor(SklearnModel):
 
 # TODO: Maybe somehow get the encoding dict to allow non-encoded labels
 class SklearnClassifier(SklearnModel):
-    def __init__(self, model_type, **kwargs):
+    def __init__(self, model_type, rise=1, tuning=False, **kwargs):
         """
-
-                :param model_type:
-                :param kwargs: rise and tuning
-                """
-        super(SklearnClassifier, self).__init__(model_type, **kwargs)
+        :param model_type: sklearn model type
+        :param rise: for a supervised learning, rise > 0
+        :param tuning: whether tuning is part of the model
+        :param kwargs:
+        """
+        super(SklearnClassifier, self).__init__(model_type, rise=rise, tuning=tuning, **kwargs)
         self.__essentials = {}
 
     def transform(self, new_X):
@@ -139,15 +176,14 @@ class SklearnClassifier(SklearnModel):
             """
             The majority vote is implemented with np.argmax and np.bincount, 
             whose usage can be demo below:
-            
+
             >> import numpy as np
-            
+
             >> list(map(
             >>     lambda ary: np.bincount(ary),
             >>     np.array([[0,0,1], [1,1,2], [3,3,0]])
             >> ))
             [array([2, 1]), array([0, 2, 1]), array([1, 0, 0, 2])]
-
             >> np.apply_along_axis(
             >>     lambda ary: np.argmax(np.bincount(ary)),
             >>     axis=1,
@@ -165,7 +201,7 @@ class SklearnClassifier(SklearnModel):
             majority_vote = np.apply_along_axis(
                 lambda ary: np.argmax(np.bincount(ary)),
                 axis=1,
-                arr= stacked_predictions
+                arr=stacked_predictions
             )
 
             return majority_vote
