@@ -101,14 +101,18 @@ def rm_obj_by_coreid(c_id, fpaths, db_):
 
 
 if __name__ == "__main__":
+    import sys
     from bson.objectid import ObjectId
 
     db_host = "localhost"
-    home_path = "/home/luke/Desktop/ml_forest_projects/oversimplified/local_storage"
+    # home_path = "/home/luke/Desktop/ml_forest_projects/oversimplified/local_storage"
+    home_path = "/home/ubuntu/local_storage"
     project = "oversimplified"
 
     db = {"host": db_host, "project": project}
     filepaths = [{"home": home_path, "project": project}]
+    
+    core_id = sys.argv[1]
+    core_id = ObjectId(core_id)
+    rm_obj_by_coreid(core_id, filepaths, db)
 
-    core_id = ObjectId("5d1fd8a2f62d70785e90cc13")
-    # rm_obj_by_coreid(core_id, filepaths, db)
