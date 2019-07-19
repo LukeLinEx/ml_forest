@@ -101,12 +101,13 @@ def rm_obj_by_coreid(c_id, fpaths, db_):
 
 
 if __name__ == "__main__":
+    import os
     import sys
     from bson.objectid import ObjectId
 
     db_host = "localhost"
-    # home_path = "/home/luke/Desktop/ml_forest_projects/oversimplified/local_storage"
-    home_path = "/home/ubuntu/local_storage"
+    forest_path = os.environ["FORESTPATH"]
+    home_path = "{}/local_storage".format(forest_path)
     project = "oversimplified"
 
     db = {"host": db_host, "project": project}
