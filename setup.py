@@ -7,6 +7,7 @@ setup(
     install_requires=[
         "bson",
         "pymongo",
+        "PyYAML",
         "numpy",
         "pandas",
         "scipy",
